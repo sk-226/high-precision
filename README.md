@@ -1,10 +1,10 @@
 # High-Precision Conjugate Gradient Solver
 
-A template-based implementation of the Conjugate Gradient method supporting multiple arithmetic precision levels, from standard IEEE 754 double precision to Bailey's extended quad precision (~128 digits).
+A template-based implementation of the Conjugate Gradient method supporting multiple arithmetic precision levels, from standard IEEE 754 double precision to Bailey's high-precision arithmetic libraries (DD/QX/DQ).
 
 ## Features
 
-- **Multiple Precision Support**: double, DD (~32 digits), DQ (~64 digits), QX (~128 digits)
+- **Multiple Precision Support**: double, DD (~30 digits), QX (~33 digits), DQ (~66 digits)
 - **Template-Based Design**: Single algorithm implementation works across all precision types
 - **Comprehensive Metrics**: Tracks convergence history, timing, and error analysis
 - **Matrix Market Format**: Supports standard sparse matrix input files
@@ -50,8 +50,8 @@ docker run --rm bailey-hp /work/build/cg_solver --matrix nos5 --precision qx    
 ```bash
 # Set up Bailey library paths
 export QXFUN_DIR=/path/to/qxfun/fortran
-export DQFUN_DIR=/path/to/dqfun/fortran  
 export DDFUN_DIR=/path/to/ddfun/fortran
+export DQFUN_DIR=/path/to/dqfun/fortran 
 
 # Configure and build
 cmake -S . -B build -G Ninja \
@@ -85,12 +85,12 @@ Examples:
 
 ## Precision Levels
 
-| Precision | Library | Decimal Digits | Use Case |
-|-----------|---------|----------------|----------|
-| `double`  | IEEE 754 | ~15 | Performance baseline |
-| `dq`      | Bailey DQFUN | ~66 | High precision |
-| `dd`      | Bailey DDFUN | ~30 | Extended precision |
-| `qx`      | Bailey QXFUN | ~33 | Maximum precision |
+| Precision | Library | Decimal Digits |
+|-----------|---------|----------------|
+| `double`  | IEEE 754 | ~15 |
+| `dq`      | Bailey DQFUN | ~66 |
+| `qx`      | Bailey QXFUN | ~33 |
+| `dd`      | Bailey DDFUN | ~30 |
 
 ## Output Format
 
@@ -181,8 +181,8 @@ Input matrices should be in Matrix Market coordinate format (`.mtx`):
 
 - **Double precision**: Fastest execution, ~15 digit accuracy
 - **DD precision**: ~2-5x slower than double, ~30 digit accuracy  
-- **DQ precision**: ~10-20x slower than double, ~64 digit accuracy
 - **QX precision**: ~5-10x slower than double, ~33 digit accuracy
+- **DQ precision**: ~10-20x slower than double, ~64 digit accuracy
 
 Higher precision levels may converge in fewer iterations due to reduced round-off error accumulation.
 
