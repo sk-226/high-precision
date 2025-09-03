@@ -1,0 +1,7 @@
+compose.override.yaml
+build/
+.cache/
+.ccls-cache/
+outputs/
+tmp/
+compile_commands.json
