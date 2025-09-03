@@ -1,4 +1,4 @@
-.PHONY: build run clean
+.PHONY: build run clean dev-build dev-up dev-down dev-logs dev-exec dev-authorize-key
 
 DOCKER_IMAGE ?= bailey-hp
 # Host project root (quoted for safe volume mounts)
@@ -31,3 +31,37 @@ clean:
 # swallow extra words after 'run' so make doesn't try to build them as targets
 %:
 	@:
+
+# -----------------------------
+# Dev container via Compose
+# -----------------------------
+dev-build:
+	docker compose build dev
+
+dev-up:
+	docker compose up -d --build dev
+
+dev-down:
+	docker compose down
+
+dev-logs:
+	docker compose logs -f dev
+
+dev-exec:
+	docker compose exec dev bash
+
+# ------------------------------------------------------------------
+# One-time: add your SSH public key to the dev container (persistent)
+# Usage:
+#   make dev-authorize-key                 # uses ~/.ssh/id_ed25519.pub
+#   make dev-authorize-key PUBKEY=~/.ssh/id_rsa.pub
+# ------------------------------------------------------------------
+PUBKEY ?= ~/.ssh/id_ed25519.pub
+dev-authorize-key:
+	@if [ ! -f "$(PUBKEY)" ]; then \
+	  echo "[ERROR] Public key not found: $(PUBKEY)"; \
+	  echo "Hint: set PUBKEY=~/.ssh/id_rsa.pub or another .pub file"; \
+	  exit 1; \
+	fi
+	@echo "Authorizing key: $(PUBKEY) -> dev@container";
+	docker compose exec -T dev bash -lc 'install -d -m 700 -o dev -g dev ~dev/.ssh && cat >> ~dev/.ssh/authorized_keys && chown dev:dev ~dev/.ssh/authorized_keys && chmod 600 ~dev/.ssh/authorized_keys' < $(PUBKEY)

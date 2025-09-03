@@ -1,0 +1,33 @@
+name: high-precision
+
+services:
+  dev:
+    build:
+      context: .
+      target: dev
+      args:
+        ROCKY_VERSION: "9"
+        USERNAME: ${USERNAME:-dev}
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    image: bailey-hp-dev
+    ports:
+      - "127.0.0.1:2222:22"
+    volumes:
+      - ./:/workspace/high-precision:cached
+      # Persist SSH host keys to keep fingerprint stable across restarts
+      - ssh_host_keys:/etc/ssh
+      # Persist the dev user's .ssh directory (authorized_keys, known_hosts)
+      - dev_ssh:/home/dev/.ssh
+    environment:
+      # Bailey library paths are already compiled into the image; expose for CMake if needed
+      - QXFUN_DIR=/opt/qxfun/fortran
+      - DQFUN_DIR=/opt/dqfun/fortran
+      - DDFUN_DIR=/opt/ddfun/fortran
+    restart: unless-stopped
+    tty: true
+    stdin_open: true
+
+volumes:
+  ssh_host_keys:
+  dev_ssh:

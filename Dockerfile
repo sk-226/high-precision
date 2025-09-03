@@ -1,7 +1,8 @@
 # ============================================================================
 # Rocky Linux 9 – DD / DQ / QX + Eigen3 + C++17 疎行列環境   (arm64 & x86_64)
 # ============================================================================
-FROM rockylinux:9
+ARG ROCKY_VERSION=9
+FROM rockylinux:${ROCKY_VERSION} AS base
 
 # ---------------------------------------------------------------------------
 # 0) 基本開発環境（先に distro-sync）
@@ -87,9 +88,59 @@ RUN gfortran -J${DDFUN_DIR} -c /tmp/ddfun_cwrap.f90 -I${DDFUN_DIR} && \
     ar rcs ${QXFUN_DIR}/libqxwrap.a qxfun_cwrap.o && \
     rm /tmp/*.f90
 
-# ---------------------------------------------------------------------------
-# 3) プロジェクトを投入して CMake ビルド
-# ---------------------------------------------------------------------------
+# ============================================================================
+# dev ステージ: Zed リモート開発用（LSP + SSH サーバ）
+# ============================================================================
+FROM base AS dev
+
+# 追加ツール: clangd / SSH / Python(pip) / gdb / ripgrep など
+RUN dnf -y install \
+      clang clang-tools-extra \
+      python3 python3-pip \
+      gdb ripgrep openssh-server openssh \
+    && dnf clean all \
+    && pip3 install --no-cache-dir \
+      fortls cmake-language-server
+
+# 非rootユーザを作成（ホストUID/GIDに合わせられるよう引数化）
+ARG USERNAME=dev
+ARG UID=1000
+ARG GID=1000
+RUN groupadd -g ${GID} ${USERNAME} && \
+    useradd -m -u ${UID} -g ${GID} -s /bin/bash ${USERNAME}
+
+# SSHD 設定（鍵認証のみ、ローカルポートフォワード用）
+RUN mkdir -p /var/run/sshd /home/${USERNAME}/.ssh && \
+    chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/.ssh && \
+    sed -i 's/^#\?PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/sshd_config && \
+    sed -i 's/^#\?UsePAM .*/UsePAM yes/' /etc/ssh/sshd_config && \
+    sed -i 's/^#\?PermitRootLogin .*/PermitRootLogin no/' /etc/ssh/sshd_config && \
+    sed -i 's|^#\?AuthorizedKeysFile .*|AuthorizedKeysFile .ssh/authorized_keys|' /etc/ssh/sshd_config && \
+    echo "AllowUsers ${USERNAME}" >> /etc/ssh/sshd_config && \
+    echo "UseDNS no" >> /etc/ssh/sshd_config
+
+EXPOSE 22
+WORKDIR /workspace/high-precision
+RUN ln -s /workspace/high-precision /work || true
+
+# 起動時にホスト鍵を生成してからsshdを起動するエントリポイント
+RUN cat > /usr/local/bin/sshd-entrypoint.sh << 'EOS' \
+ && chmod +x /usr/local/bin/sshd-entrypoint.sh
+#!/usr/bin/env bash
+set -euo pipefail
+# Generate host keys if missing (common in containers)
+if ! ls /etc/ssh/ssh_host_*_key >/dev/null 2>&1; then
+  ssh-keygen -A
+fi
+exec /usr/sbin/sshd -D -e
+EOS
+
+CMD ["/usr/local/bin/sshd-entrypoint.sh"]
+
+# ============================================================================
+# ci ステージ（デフォルト最終ステージ）: 既存の make build / run を維持
+# ============================================================================
+FROM base AS ci
 WORKDIR /work
 COPY . /work
 RUN cmake -S . -B build -G Ninja \

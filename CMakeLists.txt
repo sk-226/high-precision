@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.21)
 project(bailey_hp LANGUAGES C CXX Fortran)
 
+# Always emit compile_commands.json for editors/LSP (clangd)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "Generate compile_commands.json for LSPs" FORCE)
+
 # ---------- コンパイラ最適化設定 -----------------------------------------------
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -flto -DNDEBUG")
 set(CMAKE_C_FLAGS_RELEASE "-O3 -march=native -flto -DNDEBUG")
