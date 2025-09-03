@@ -62,6 +62,22 @@ cmake --build build --config Release
 ./build/cg_solver --matrix nos5 --precision qx --tol 1e-15
 ```
 
+### Remote Dev with Zed (recommended for editors)
+
+Use the persistent dev container + Zed SSH remote to eliminate local toolchain mismatch and enable full LSP (clangd/fortls) inside Docker.
+
+- Start: `make dev-up` (run compose on the host terminal, not inside the container)
+- Authorize SSH key for user `dev` (persistent via named volume):
+  - `make dev-authorize-key` (uses `~/.ssh/id_ed25519.pub`)
+  - or `make dev-authorize-key PUBKEY=~/.ssh/id_rsa.pub`
+- Connect: `ssh -p 2222 dev@localhost`
+- Open folder: `/workspace/high-precision`
+- Configure once: `cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release`
+  - `compile_commands.json` is generated automatically; optionally symlink it to the repo root
+- Default inputs: the dev image links `/work -> /workspace/high-precision`, so the solver’s default `/work/inputs` works without flags
+
+Details and troubleshooting: see `doc/zed_remote_dev.md`.
+
 ## Command Line Usage
 
 ```bash
