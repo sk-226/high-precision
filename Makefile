@@ -1,6 +1,10 @@
 .PHONY: build run clean
 
 DOCKER_IMAGE ?= bailey-hp
+# Host project root (quoted for safe volume mounts)
+HOST_PWD := $(shell pwd)
+# Persist outputs generated inside the container
+DOCKER_RUN_FLAGS := -v "$(HOST_PWD)/outputs:/work/outputs"
 
 # Build Docker image that contains compiled binaries under /work/build
 build:
@@ -13,10 +17,11 @@ RUN_ARGS := $(wordlist 2,$(words $(RUN_TOKENS)),$(RUN_TOKENS))
 
 # Run a built binary inside the Docker image
 run: build
+	@mkdir -p outputs
 	@if [ -n "$(CMD)" ]; then \
-	  docker run --rm $(DOCKER_IMAGE) sh -lc "exec /work/build/$(CMD)"; \
+	  docker run --rm $(DOCKER_RUN_FLAGS) $(DOCKER_IMAGE) sh -lc "exec /work/build/$(CMD)"; \
 	else \
-	  docker run --rm $(DOCKER_IMAGE) /work/build/$(RUN_EXE) $(RUN_ARGS); \
+	  docker run --rm $(DOCKER_RUN_FLAGS) $(DOCKER_IMAGE) /work/build/$(RUN_EXE) $(RUN_ARGS); \
 	fi
 
 # Clean local CMake build directory (optional)
