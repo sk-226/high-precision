@@ -60,8 +60,14 @@ cd /work
 
 ```bash
 cd /work
-cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+
+# LSP only: configure project (generates build/compile_commands.json; no binaries)
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
+
+# Build binaries (optional for LSP)
 cmake --build build -j
+
+# Example run
 ./build/cg_solver --matrix nos7 --precision double --tol 1e-12 --max-iter 30
 ```
 
