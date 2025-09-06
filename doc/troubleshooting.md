@@ -410,3 +410,16 @@ Short runs (tens of milliseconds) can vary by a few–few tens of milliseconds d
 
 > [!IMPORTANT]
 > `make run` and `make run NO_BUILD=1` execute the exact same binary produced in the image. Differences you observe are environmental jitter, not code changes.
+
+### DQ/QX give wrong digits or fail on x86_64
+
+Symptoms: far fewer digits than expected or runtime errors with DQ/QX on x86_64.
+
+Cause: on x86_64 glibc, `long double` is 80‑bit extended (not IEEE 754 binary128). The current C/Fortran interop assumes binary128 via `long double`.
+
+Resolution:
+- Run inside the arm64 Linux container (where `long double` is binary128), or
+- Use DD mode on x86_64.
+
+> [!IMPORTANT]
+> DQ/QX are currently unsupported on x86_64 in this repository. Future work aims to provide a portable interface (_Float128/libquadmath) for x86_64.

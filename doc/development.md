@@ -22,6 +22,9 @@ make run NO_BUILD=1 -- cg_solver --matrix nos5 --precision dq --tol 1e-15 --max-
 > [!NOTE]
 > The container workdir is `/work`. Host `./inputs` is mounted to `/work/inputs` (read-only) and `./outputs` persists results.
 
+> [!IMPORTANT]
+> If you customize the base image or use a local toolchain, verify the floating‑point model before using DQ/QX: `cmake --build build && ./build/check_ldbl`.
+
 ### Local Development Setup
 
 1. **Install Dependencies** (see [Dependencies](dependencies.md))

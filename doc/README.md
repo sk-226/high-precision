@@ -6,6 +6,15 @@ This project implements high-precision numerical analysis using David H. Bailey'
 
 This project bridges Fortran-based high-precision arithmetic libraries with C++ linear algebra, enabling quad-precision conjugate gradient (CG) method for sparse matrices.
 
+> [!IMPORTANT]
+> Platform support: arm64 Linux (container) — DD/DQ/QX supported (`long double` = IEEE 754 binary128). x86_64 glibc — DQ/QX unsupported (`long double` ≠ binary128); use DD or run on arm64.
+
+> [!TIP]
+> Quick check inside the image: `make run NO_BUILD=1 -- check_ldbl`.
+
+> [!NOTE]
+> Future work: plan to support DQ/QX on x86_64 via a portable REAL(16) interop (e.g., _Float128/libquadmath) rather than relying on `long double`.
+
 ### Precision Levels
 
 - **DDFUN**: Double-double precision (~32 decimal digits)
