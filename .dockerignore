@@ -1,0 +1,10 @@
+build/
+outputs/
+tmp/
+.cache/
+.ccls-cache/
+compile_commands.json
+compose.override.yaml
+inputs/
+.DS_Store
+.git/

@@ -120,8 +120,9 @@ RUN mkdir -p /var/run/sshd /home/${USERNAME}/.ssh && \
     echo "UseDNS no" >> /etc/ssh/sshd_config
 
 EXPOSE 22
-WORKDIR /workspace/high-precision
-RUN ln -s /workspace/high-precision /work || true
+WORKDIR /work
+# 旧パス互換（当面の安全弁）
+RUN mkdir -p /workspace && ln -s /work /workspace/high-precision || true
 
 # 起動時にホスト鍵を生成してからsshdを起動するエントリポイント
 RUN cat > /usr/local/bin/sshd-entrypoint.sh << 'EOS' \
@@ -143,7 +144,9 @@ CMD ["/usr/local/bin/sshd-entrypoint.sh"]
 FROM base AS ci
 WORKDIR /work
 COPY . /work
-RUN cmake -S . -B build -G Ninja \
+# 万一ビルドディレクトリが混入しても初期化してから構成
+RUN rm -rf build CMakeFiles CMakeCache.txt && \
+    cmake -S . -B build -G Ninja \
         -DQXFUN_DIR=${QXFUN_DIR} -DDQFUN_DIR=${DQFUN_DIR} -DDDFUN_DIR=${DDFUN_DIR} \
         -DCMAKE_BUILD_TYPE=Release && \
     cmake --build build --config Release && \

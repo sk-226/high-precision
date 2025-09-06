@@ -6,21 +6,21 @@ This document covers development setup, workflow, and important considerations f
 
 ### Docker Development (Recommended)
 
-The fastest way to get started:
+The simplest workflow uses Make targets and the provided Dockerfile.
 
 ```bash
-# Clone and enter project directory
-cd /path/to/high-precision
+# Build the image and project
+make build
 
-# Build development environment
-docker build -t bailey-hp .
+# Run a solver from the image (note the --)
+make run -- cg_solver --matrix nos5 --precision dq --tol 1e-15 --max-iter 2.0
 
-# Run development container
-docker run -it bailey-hp /bin/bash
-
-# Inside container - run the application
-./build/sample_qx
+# Quick re-run without rebuild (same binary)
+make run NO_BUILD=1 -- cg_solver --matrix nos5 --precision dq --tol 1e-15 --max-iter 2.0
 ```
+
+> [!NOTE]
+> The container workdir is `/work`. Host `./inputs` is mounted to `/work/inputs` (read-only) and `./outputs` persists results.
 
 ### Local Development Setup
 
@@ -49,10 +49,10 @@ cmake --build build --config Release
 high-precision/
 ├── src/                    # C++ source code
 │   └── main.cpp           # Main application
-├── fortran/               # Fortran wrapper files
-│   ├── ddfun_cwrap.f90   # DD wrapper
-│   ├── dqfun_cwrap.f90   # DQ wrapper
-│   └── qxfun_cwrap.f90   # QX wrapper
+├── interfaces/bailey_wrappers/   # Fortran wrapper files
+│   ├── ddfun_cwrap.f90           # DD wrapper
+│   ├── dqfun_cwrap.f90           # DQ wrapper
+│   └── qxfun_cwrap.f90           # QX wrapper
 ├── doc/                  # Documentation
 ├── CMakeLists.txt        # Build configuration
 ├── Dockerfile           # Container definition
@@ -95,12 +95,11 @@ ninja -C build
 
 ## Development Workflow
 
-### Making Changes
+### Making Changes (containerized)
 
-1. **Edit C++ Code**: Modify `src/main.cpp` or add new source files
-2. **Update Fortran Wrappers**: Modify `fortran/*_cwrap.f90` if needed
-3. **Rebuild**: `cmake --build build`
-4. **Test**: `./build/sample_qx`
+1. Start dev container and connect via SSH (see [Remote Development](remote_dev.md)).
+2. Build inside the container: `cmake -S . -B build -G Ninja && cmake --build build -j`.
+3. Run: `./build/cg_solver --matrix nos5 --precision dq --tol 1e-15`.
 
 ### Adding New Functions
 

@@ -402,3 +402,11 @@ echo 'program test; end program' | gfortran -x f95 -
 - **Eigen3 Documentation**: https://eigen.tuxfamily.org/
 - **CMake Documentation**: https://cmake.org/documentation/
 - **Project Repository**: Check CLAUDE.md for specific project guidance
+## Runtime Notes
+
+### Small runtime timing differences
+
+Short runs (tens of milliseconds) can vary by a few–few tens of milliseconds due to CPU turbo/thermal state and host scheduling noise, especially under a VM/container runtime.
+
+> [!IMPORTANT]
+> `make run` and `make run NO_BUILD=1` execute the exact same binary produced in the image. Differences you observe are environmental jitter, not code changes.

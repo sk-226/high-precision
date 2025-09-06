@@ -14,7 +14,7 @@ services:
     ports:
       - "127.0.0.1:2222:22"
     volumes:
-      - ./:/workspace/high-precision:cached
+      - ./:/work:cached
       # Persist SSH host keys to keep fingerprint stable across restarts
       - ssh_host_keys:/etc/ssh
       # Persist the dev user's .ssh directory (authorized_keys, known_hosts)

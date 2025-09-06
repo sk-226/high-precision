@@ -122,3 +122,6 @@ echo $QXFUN_DIR
 echo $DQFUN_DIR  
 echo $DDFUN_DIR
 ```
+
+> [!NOTE]
+> Inside our containers the project root is `/work`. Inputs are expected under `/work/inputs` (mounted from host `./inputs`).

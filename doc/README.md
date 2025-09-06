@@ -26,9 +26,14 @@ make build
 make run -- cg_solver --matrix nos5 --precision dq --tol 1e-30 --max-iter 2.0
 ```
 
-Important:
-- Always include `--` after `make run` so that subsequent options are passed to the solver, not to make.
-- This project requires that the runtime container's `long double` is IEEE 754 binary128 (quad). Our provided Dockerfile satisfies this and we verify it at build time.
+> [!IMPORTANT]
+> Always include `--` after `make run` so subsequent flags go to the solver, not to make.
+
+> [!NOTE]
+> The container workdir is `/work`. Host `./inputs` is mounted read-only to `/work/inputs`, and outputs persist to `./outputs`.
+
+> [!TIP]
+> For quick re-runs when code hasn’t changed: `make run NO_BUILD=1 -- ...` (skips image rebuild; executes the same binary as `make run`).
 
 ### Using raw Docker
 
@@ -39,7 +44,7 @@ docker run --rm bailey-hp /work/build/cg_solver --matrix nos5 --precision dq --t
 
 ### Local Development
 
-See [Dependencies](dependencies.md) for detailed setup instructions.
+See [Dependencies](dependencies.md) for detailed setup instructions, and [Remote Development over SSH](remote_dev.md) for an editor-agnostic SSH workflow.
 
 ## Documentation Structure
 

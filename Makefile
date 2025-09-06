@@ -4,7 +4,11 @@ DOCKER_IMAGE ?= bailey-hp
 # Host project root (quoted for safe volume mounts)
 HOST_PWD := $(shell pwd)
 # Persist outputs generated inside the container
-DOCKER_RUN_FLAGS := -v "$(HOST_PWD)/outputs:/work/outputs"
+# Also mount inputs read-only for experiments
+DOCKER_RUN_FLAGS := -v "$(HOST_PWD)/outputs:/work/outputs" -v "$(HOST_PWD)/inputs:/work/inputs:ro"
+
+# Skip image build if NO_BUILD=1 (run-fast)
+NO_BUILD ?= 0
 
 # Build Docker image that contains compiled binaries under /work/build
 build:
@@ -16,8 +20,20 @@ RUN_EXE := $(if $(RUN_TOKENS),$(firstword $(RUN_TOKENS)),cg_solver)
 RUN_ARGS := $(wordlist 2,$(words $(RUN_TOKENS)),$(RUN_TOKENS))
 
 # Run a built binary inside the Docker image
-run: build
+# Always define the rule; conditionally add prerequisite
+RUN_DEPS :=
+ifneq ($(NO_BUILD),1)
+RUN_DEPS += build
+endif
+
+run: $(RUN_DEPS)
 	@mkdir -p outputs
+	@if [ "$(NO_BUILD)" = "1" ]; then \
+	  if ! docker image inspect $(DOCKER_IMAGE) >/dev/null 2>&1; then \
+	    echo "[ERROR] Docker image '$(DOCKER_IMAGE)' not found. Run 'make build' first."; \
+	    exit 1; \
+	  fi; \
+	fi
 	@if [ -n "$(CMD)" ]; then \
 	  docker run --rm $(DOCKER_RUN_FLAGS) $(DOCKER_IMAGE) sh -lc "exec /work/build/$(CMD)"; \
 	else \
