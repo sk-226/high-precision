@@ -8,15 +8,18 @@ namespace io {
 /// MATLAB .mat file exporter for convergence data
 /// 
 /// Exports CGResult data to MATLAB-compatible .mat files using matio-cpp.
-/// Creates structured data with metadata and convergence history for easy
-/// analysis and visualization in MATLAB.
+/// Writes two top-level variables for easy access in MATLAB:
+///   - `metadata`: Problem info and run stats (no final metrics)
+///   - `convergence`: Iteration-by-iteration histories
+/// Final metrics (final residuals/errors) are intentionally omitted here and
+/// should be captured in CSV for aggregation workflows.
 class MatExporter {
 public:
     /// Export convergence data to MATLAB .mat file
     /// 
-    /// Creates a structured MATLAB file with the following hierarchy:
-    /// - data.metadata: Problem information and final results
-    /// - data.convergence: Iteration-by-iteration convergence history
+    /// Creates a MATLAB file with the following variables:
+    /// - metadata: Problem information (matrix/precision, converged, iters, time)
+    /// - convergence: Iteration histories (hist_iterations, hist_*)
     /// 
     /// @param result CGResult containing convergence data
     /// @param filename Output .mat filename 

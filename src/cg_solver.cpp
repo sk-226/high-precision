@@ -7,14 +7,14 @@
 #ifdef ENABLE_MAT_EXPORT
 #include "io/mat_exporter.hpp"
 #endif
+#include "io/csv_exporter.hpp"
 
 #include <iostream>
 #include <string>
 #include <variant>
 #include <iomanip>
-#include <sstream>
-#include <algorithm>
 #include <filesystem>
+#include <limits>
 
 // Command line configuration
 struct SolverConfig {
@@ -24,6 +24,7 @@ struct SolverConfig {
     std::variant<int, double> max_iter{2.0};  // Default: 2*n
     std::string input_dir{"/work/inputs"};
     std::string export_mat_file;  // Empty if not specified
+    std::string export_csv_file;  // Empty if not specified
 };
 
 // Command line parser
@@ -69,6 +70,9 @@ SolverConfig parseCommandLine(int argc, char* argv[]) {
         }
         else if (arg == "--export-mat" && i + 1 < argc) {
             config.export_mat_file = argv[++i];
+        }
+        else if (arg == "--export-csv" && i + 1 < argc) {
+            config.export_csv_file = argv[++i];
         }
         else if (arg == "--help" || arg == "-h") {
             throw std::runtime_error("help");  // Special case for help
@@ -123,13 +127,15 @@ void printUsage(const char* program_name) {
     std::cout << "                        - Float: coefficient * matrix_size (default: 2.0)\n";
     std::cout << "  --input-dir PATH      Input directory path (default: /work/inputs)\n";
     std::cout << "  --export-mat FILE     Export convergence data to MATLAB .mat file\n";
+    std::cout << "  --export-csv FILE     Append final metrics to CSV (example schema)\n";
     std::cout << "  --help, -h            Show this help message\n\n";
     std::cout << "Examples:\n";
     std::cout << "  " << program_name << " --matrix nos5 --precision qx --tol 1e-15\n";
     std::cout << "  " << program_name << " --matrix nos7 --precision dq --max-iter 1000\n";
     std::cout << "  " << program_name << " --matrix test --precision dd --max-iter 2.5\n";
     std::cout << "  " << program_name << " --matrix nos5 --precision double --tol 1e-10\n";
-    std::cout << "  " << program_name << " --matrix nos5 --precision dq --export-mat results.mat\n\n";
+    std::cout << "  " << program_name << " --matrix nos5 --precision dq --export-mat results.mat\n";
+    std::cout << "  " << program_name << " --matrix nos5 --precision dq --export-csv summary.csv\n\n";
 }
 
 // Template solver function
@@ -186,6 +192,38 @@ int solveCG(const SolverConfig& config) {
 #else
         std::cerr << "Warning: MATLAB export not available - built without matio-cpp support." << std::endl;
 #endif
+    }
+    
+    // Export to CSV (final metrics) if requested
+    if (!config.export_csv_file.empty()) {
+        std::string csv_path = resolveExportPath(config.export_csv_file);
+        bool csv_ok = io::CsvExporter::append_row(
+            csv_path,
+            config.matrix_name,
+            n,
+            A.nonZeros(),
+            "cg",
+            config.tolerance,
+            max_iterations,
+            "ones",
+            "none",
+            "",
+            "CG (none)",
+            0.0,
+            result.converged,
+            result.iterations_performed,
+            result.true_relres_2,
+            result.final_residual_norm,
+            result.hist_relerr_2.empty() ? std::numeric_limits<double>::quiet_NaN() : result.hist_relerr_2.back(),
+            result.hist_relerr_A.empty() ? std::numeric_limits<double>::quiet_NaN() : result.hist_relerr_A.back(),
+            result.computation_time,
+            result.converged ? std::string("reached_tol") : std::string("max_iterations")
+        );
+        if (csv_ok) {
+            std::cout << "Appended results to " << csv_path << std::endl;
+        } else {
+            std::cerr << "Warning: Failed to append CSV results to " << csv_path << std::endl;
+        }
     }
     
     return result.converged ? 0 : 2;  // Exit code 2 for non-convergence (not an error)

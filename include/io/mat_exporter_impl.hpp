@@ -17,10 +17,7 @@ bool MatExporter::export_convergence_data(
     const std::string& precision_name
 ) {
     try {
-        // Create root struct for MATLAB data
-        matioCpp::Struct data("data");
-        
-        // --- Metadata section ---
+        // --- Metadata section (top-level variable) ---
         matioCpp::Struct metadata("metadata");
         
         // Problem information
@@ -45,31 +42,10 @@ bool MatExporter::export_convergence_data(
         computation_time = result.computation_time;
         metadata.setField(computation_time);
         
-        // Final convergence results
-        matioCpp::Element<double> final_relres_2norm("final_relres_2norm");
-        final_relres_2norm = result.final_residual_norm;
-        metadata.setField(final_relres_2norm);
+        // Note: Final metrics are intentionally omitted from metadata.
+        // They are exported to CSV separately and can be derived from histories.
         
-        matioCpp::Element<double> final_true_relres_2norm("final_true_relres_2norm");
-        final_true_relres_2norm = result.true_relres_2;
-        metadata.setField(final_true_relres_2norm);
-        
-        // Final error metrics (if available)
-        if (!result.hist_relerr_2.empty()) {
-            matioCpp::Element<double> final_relerr_2norm("final_relerr_2norm");
-            final_relerr_2norm = result.hist_relerr_2.back();
-            metadata.setField(final_relerr_2norm);
-        }
-        
-        if (!result.hist_relerr_A.empty()) {
-            matioCpp::Element<double> final_relerr_Anorm("final_relerr_Anorm");
-            final_relerr_Anorm = result.hist_relerr_A.back();
-            metadata.setField(final_relerr_Anorm);
-        }
-        
-        data.setField(metadata);
-        
-        // --- Convergence history section ---
+        // --- Convergence history section (top-level variable) ---
         matioCpp::Struct convergence("convergence");
         
         // Create iteration vector
@@ -88,18 +64,17 @@ bool MatExporter::export_convergence_data(
         iter_final = static_cast<double>(result.iterations_performed);
         convergence.setField(iter_final);
         
-        data.setField(convergence);
-        
-        // Write to file
+        // Write to file (two top-level variables)
         matioCpp::File file = matioCpp::File::Create(filename);
         if (!file.isOpen()) {
             std::cerr << "Error: Could not create file " << filename << std::endl;
             return false;
         }
-        
-        bool write_success = file.write(data);
-        if (!write_success) {
-            std::cerr << "Error: Failed to write data to " << filename << std::endl;
+        bool write_ok = true;
+        write_ok = write_ok && file.write(metadata);
+        write_ok = write_ok && file.write(convergence);
+        if (!write_ok) {
+            std::cerr << "Error: Failed to write variables to " << filename << std::endl;
             return false;
         }
         
