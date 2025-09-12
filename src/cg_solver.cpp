@@ -3,7 +3,7 @@
 #include "bailey/dq_arithmetic.hpp"
 #include "bailey/qx_arithmetic.hpp"
 #include "algorithms/conjugate_gradient.hpp"
-#include "io/matrix_market.hpp"
+#include "io/matrix_market_reader.hpp"
 #ifdef ENABLE_MAT_EXPORT
 #include "io/mat_exporter.hpp"
 #endif
@@ -145,8 +145,7 @@ int solveCG(const SolverConfig& config) {
     using MatrixType = typename Traits::matrix_type;
     using VectorType = typename Traits::vector_type;
     
-    std::string matrix_path = io::constructMatrixPath(config.matrix_name, config.input_dir);
-    
+    std::string matrix_path = config.input_dir + "/" + config.matrix_name + ".mtx";
     std::cout << "Loading matrix: " << matrix_path << " (precision: " << Traits::name() << ")" << std::endl;
     
     MatrixType A = io::loadMatrixMarket<T>(matrix_path);

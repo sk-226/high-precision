@@ -1,6 +1,6 @@
 #include "bailey/qx_arithmetic.hpp"
 #include "linear_algebra/conjugate_gradient.hpp"
-#include "matrix_io/matrix_market.hpp"
+#include "io/matrix_market_reader.hpp"
 #include <iostream>
 #include <chrono>
 #include <iomanip>
@@ -10,7 +10,7 @@ int main() {
     
     try {
         auto start_load = std::chrono::high_resolution_clock::now();
-        auto A = matrix_io::loadMatrixMarket<bailey::QXNumber>("/work/inputs/nos5.mtx");
+        auto A = io::loadMatrixMarket<bailey::QXNumber>("/work/inputs/nos5.mtx");
         auto end_load = std::chrono::high_resolution_clock::now();
         
         int n = A.rows();

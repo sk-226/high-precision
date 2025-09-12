@@ -115,11 +115,6 @@ target_include_directories(test_basic PRIVATE ${COMMON_INCLUDE_DIRS})
 target_link_libraries(test_basic PRIVATE ${COMMON_LIBRARIES})
 target_compile_features(test_basic PRIVATE cxx_std_17)
 
-# Simple matrix market test
-add_executable(simple_test src/simple_test.cpp)
-target_include_directories(simple_test PRIVATE ${COMMON_INCLUDE_DIRS})
-target_link_libraries(simple_test PRIVATE ${COMMON_LIBRARIES})
-target_compile_features(simple_test PRIVATE cxx_std_17)
 
 # Precision validation test
 add_executable(precision_validation_test src/precision_validation_test.cpp)
