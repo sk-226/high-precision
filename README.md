@@ -82,7 +82,8 @@ Options:
   --tol VALUE           Convergence tolerance (default: 1.0e-12)
   --max-iter VALUE      Max iterations: integer or coefficient*size (default: 2.0)
   --input-dir PATH      Input directory (default: /work/inputs)
-  --export-mat FILE     Export convergence data to MATLAB .mat file
+  --export-mat FILE     Export convergence history to MATLAB .mat (top-level metadata, convergence)
+  --export-csv FILE     Append final metrics to CSV (example.csv schema)
   --help, -h            Show help message
 
 Examples:
@@ -90,6 +91,7 @@ Examples:
   ./build/cg_solver --matrix nos7 --precision dq --max-iter 1000
   ./build/cg_solver --matrix test --precision qx --max-iter 2.5
   ./build/cg_solver --matrix nos5 --precision dq --export-mat convergence.mat
+  ./build/cg_solver --matrix nos5 --precision dq --export-csv summary.csv
 ```
 
 ## Precision Levels
@@ -123,7 +125,16 @@ Relerr_Anorm = 7.17e-10
 
 ### MATLAB Export
 
-Temporarily omitted here. See `doc/` for the latest export guidance.
+- The `.mat` file now contains two top-level variables: `metadata` and `convergence` (no wrapping `data`).
+- `metadata` includes problem info and run stats: `matrix_name`, `precision_name`, `precision_digits`, `converged`, `iterations_performed`, `computation_time`.
+- `convergence` includes histories: `hist_iterations`, `hist_relres_2`, `hist_relerr_2`, `hist_relerr_A`, `iter_final`.
+- Final metrics are not stored in MAT; use the CSV export for aggregation or take the last element of each history in MATLAB.
+
+### CSV Export
+
+- Use `--export-csv` to append one row per run to a CSV matching `example.csv` columns.
+- `solve_status` is `reached_tol` when converged, otherwise `max_iterations`.
+- `construction_time` is `0` for this CG (no preconditioner construction). It is reserved for PCG in other codes.
 
 ## Algorithm Details
 
