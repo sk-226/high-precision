@@ -53,9 +53,6 @@ ssh -p 2222 dev@localhost
 cd /work
 ```
 
-> [!NOTE]
-> A compatibility symlink `/workspace/high-precision -> /work` exists for older setups.
-
 ## Build and Run Inside the Container
 
 ```bash

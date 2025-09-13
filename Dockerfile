@@ -122,8 +122,6 @@ RUN mkdir -p /var/run/sshd /home/${USERNAME}/.ssh && \
 
 EXPOSE 22
 WORKDIR /work
-# 旧パス互換（当面の安全弁）
-RUN mkdir -p /workspace && ln -s /work /workspace/high-precision || true
 
 # 起動時にホスト鍵を生成してからsshdを起動するエントリポイント
 RUN cat > /usr/local/bin/sshd-entrypoint.sh << 'EOS' \
