@@ -55,11 +55,14 @@ ENV \
     DQFUN_VER=v03 DQFUN_DIR=/opt/dqfun/fortran \
     QXFUN_VER=v01 QXFUN_DIR=/opt/qxfun/fortran
 
-RUN set -eux; cd /tmp; \
+RUN --mount=type=tmpfs,target=/tmp set -eux; cd /tmp; \
     for p in ddfun dqfun qxfun; do \
       ver=$(eval echo \$${p^^}_VER); \
       wget -q https://www.davidhbailey.com/dhbsoftware/${p}-${ver}.tar.gz; \
       tar -xzf ${p}-${ver}.tar.gz; \
+      dest=$(eval echo \$${p^^}_DIR); \
+      mkdir -p "${dest}/src"; \
+      cp -r ${p}-${ver} "${dest}/src/"; \
       cd ${p}-${ver}/fortran; \
       script_name="gnu-complib-${p:0:2}.scr"; \
       if [ ! -f "$script_name" ]; then script_name="gnu-complib.scr"; fi; \
@@ -68,10 +71,8 @@ RUN set -eux; cd /tmp; \
       if ! ls lib${p}*.a >/dev/null 2>&1; then \
           ar rcs lib${p:0:2}fun.a *.o; \
       fi; \
-      dest=$(eval echo \$${p^^}_DIR); \
-      mkdir -p "${dest}"; \
       cp lib${p:0:2}*.a *.o *.mod "${dest}/"; \
-      cd /tmp; rm -rf ${p}-${ver}*; \
+      cd /tmp; \
     done
 
 ENV LD_LIBRARY_PATH=${DDFUN_DIR}:${DQFUN_DIR}:${QXFUN_DIR}
