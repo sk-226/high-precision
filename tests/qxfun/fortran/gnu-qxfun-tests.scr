@@ -1,0 +1,19 @@
+echo "compiling library"
+./gnu-complib-qx.scr
+echo "testqxfun"
+./gnu-complink-qx.scr testqxfun
+./testqxfun > testqxfun.txt
+tail -1 testqxfun.txt
+echo "tpslqm1qx"
+./gnu-complink-qx.scr tpslqm1qx
+./tpslqm1qx > tpslqm1qx.txt
+tail -1 tpslqm1qx.txt
+echo "tquadqx"
+./gnu-complink-qx.scr tquadqx
+./tquadqx > tquadqx.txt
+tail -1 tquadqx.txt
+echo "tpphixqx"
+./gnu-complink-qx.scr tpphixqx
+./tpphixqx > tpphixqx.txt
+tail -1 tpphixqx.txt
+

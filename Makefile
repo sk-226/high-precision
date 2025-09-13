@@ -1,4 +1,5 @@
-.PHONY: build run clean dev-build dev-up dev-down dev-logs dev-exec dev-authorize-key
+.PHONY: build run clean dev-build dev-up dev-down dev-logs dev-exec dev-authorize-key \
+        test-dd test-dq test-qx test-bailey test-all
 
 DOCKER_IMAGE ?= bailey-hp
 # Host project root (quoted for safe volume mounts)
@@ -39,6 +40,45 @@ run: $(RUN_DEPS)
 	else \
 	  docker run --rm $(DOCKER_RUN_FLAGS) $(DOCKER_IMAGE) /work/build/$(RUN_EXE) $(RUN_ARGS); \
 	fi
+
+# -----------------------------
+# Bailey vendor tests (Fortran)
+# -----------------------------
+
+# Pass-through of optional env flags (e.g., DDFUN_STRICT=1)
+TEST_ENV :=
+ifdef DDFUN_STRICT
+TEST_ENV += -e DDFUN_STRICT=$(DDFUN_STRICT)
+endif
+
+# Internal helper to run a shell line in the container root (/work)
+define docker_exec
+  @mkdir -p outputs
+  @if [ "$(NO_BUILD)" = "1" ]; then \
+    if ! docker image inspect $(DOCKER_IMAGE) >/dev/null 2>&1; then \
+      echo "[ERROR] Docker image '$(DOCKER_IMAGE)' not found. Run 'make build' first."; \
+      exit 1; \
+    fi; \
+  fi
+  docker run --rm $(DOCKER_RUN_FLAGS) $(TEST_ENV) $(DOCKER_IMAGE) bash -lc 'cd /work && $(1)'
+endef
+
+test-dd: $(RUN_DEPS)
+	$(call docker_exec,bash tests/gnu-ddfun-tests.scr)
+
+test-dq: $(RUN_DEPS)
+	$(call docker_exec,bash tests/gnu-dqfun-tests.scr)
+
+test-qx: $(RUN_DEPS)
+	$(call docker_exec,bash tests/gnu-qxfun-tests.scr)
+
+# Run all Bailey tests in one container session
+test-bailey test-all: $(RUN_DEPS)
+	$(call docker_exec,\
+      set -e; \
+      echo "[test] DDFUN"; bash tests/gnu-ddfun-tests.scr; \
+      echo "[test] DQFUN"; bash tests/gnu-dqfun-tests.scr; \
+      echo "[test] QXFUN"; bash tests/gnu-qxfun-tests.scr)
 
 # Clean local CMake build directory (optional)
 clean:

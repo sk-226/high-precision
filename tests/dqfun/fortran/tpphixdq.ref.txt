@@ -1,0 +1,55 @@
+Poisson Phi_2 computation and analysis:
+ipal =   1; kd =  12; kp =   1; kq =   3; mpi =   8; n =   9
+ndp =     0; nep =    70
+Poisson Phi_2 computation and analysis:
+ipal = -67; kd =
+Alpha CPU time =        0.00
+Alpha =
+1.743652937035785785049916139443592661593881815367090700412973905223067e1     
+PSLQM1 integer relation detection: n =    9
+Iteration      0   Initialization
+Iteration      0   Start iterations
+Iteration     25
+Iteration     50
+Iteration     75
+Iteration     98   itermp: Small value in y =   4.125217e  -66
+Iteration     98   Relation detected
+Min, max of y =   4.125217e  -66   2.318795e  -45
+Max. bound =   7.282258e    4
+Index of relation =   4   Norm =   2.145026e    5   Residual =   4.125217e  -66
+CPU times:
+        0.00        0.03
+PSLQM1 CPU time =        0.03
+Total CPU time =        0.04
+
+Recovered half relation: 0 =
+                                                        -100608. * 1
+                                                        -165888. * beta^1
+                                                         -88320. * beta^2
+                                                         +15360. * beta^3
+                                                         +17952. * beta^4
+                                                          +3456. * beta^5
+                                                            +48. * beta^6
+                                                             -1. * beta^8
+
+Recovered full relation: 0 =
+                                                             -1. * 1
+                                                            +40. * al^2
+                                                          +3456. * al^3
+                                                         +18212. * al^4
+                                                         +32640. * al^5
+                                                         -15848. * al^6
+                                                         -85248. * al^7
+                                                        -168646. * al^8
+                                                         -85248. * al^9
+                                                         -15848. * al^10
+                                                         +32640. * al^11
+                                                         +18212. * al^12
+                                                          +3456. * al^13
+                                                            +40. * al^14
+                                                             -1. * al^16
+Output polynomial in Mathematica notation:
+ -1*1 +40*al^2 +3456*al^3 +18212*al^4 +32640*al^5 -15848*al^6 -85248*al^7 
+-168646*al^8 -85248*al^9 -15848*al^10 +32640*al^11 +18212*al^12 +3456*al^13 
++40*al^14 -1*al^16
+TEST PASSED

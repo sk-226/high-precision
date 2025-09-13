@@ -1,0 +1,32 @@
+PSLQM1 Test Program
+n =  17   kq = 0
+kr = 4   ks = 4   rb =  2.0000D+01
+Full precision level ndp =    70 digits
+Full precision epsilon level nep =    -67
+PSLQM1 integer relation detection: n =   17
+Iteration      0   Initialization
+Iteration      0   Start iterations
+Iteration     25
+Iteration     50
+Iteration     75
+Iteration    100
+Iteration    100   Min, max of y =   4.201917e   -41   1.517877e   -39
+Iteration    100   Norm bound =   9.081436e    1    Max. bound =   9.081436e    1
+Iteration    125
+Iteration    150
+Iteration    175
+Iteration    176   itermp: Small value in y =   4.479038e  -67
+Iteration    176   Relation detected
+Min, max of y =   4.479038e  -67   6.025946e  -60
+Max. bound =   1.815146e    3
+Index of relation =   3   Norm =   3.917085e    3   Residual =   4.479038e  -67
+CPU times:
+        0.00        0.16
+
+Recovered relation: 0 =
+                                                             -1. * 1
+                                                          +3860. * al^  4
+                                                           +666. * al^  8
+                                                            +20. * al^ 12
+                                                             -1. * al^ 16
+TEST PASSED

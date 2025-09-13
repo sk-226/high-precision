@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Compile minimal DDFUN sources for tests. Default mimics vendor flags.
+# Optional: set DDFUN_STRICT to tweak rigor for borderline cases.
+#   DDFUN_STRICT=0 (default):  -O3 -fno-expensive-optimizations
+#   DDFUN_STRICT=1:            -O1 with safer FP flags
+#   DDFUN_STRICT=2:            -O0 with safer FP flags (most conservative)
+
+strict="${DDFUN_STRICT:-0}"
+case "$strict" in
+  1)
+    CFLAGS="-O1 -fno-expensive-optimizations -fno-unsafe-math-optimizations -fprotect-parens -ffloat-store -fno-finite-math-only -frounding-math -fno-associative-math"
+    ;;
+  2)
+    CFLAGS="-O0 -fno-unsafe-math-optimizations -fprotect-parens -ffloat-store -fno-finite-math-only -frounding-math -fno-associative-math"
+    ;;
+  *)
+    CFLAGS="-O3 -fno-expensive-optimizations"
+    ;;
+esac
+
+echo "[ddfun] compiling with: $CFLAGS"
+gfortran $CFLAGS -c ddfuna.f90 ddfune.f90 ddmodule.f90 second.f90
