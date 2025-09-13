@@ -93,61 +93,68 @@ CGResult<T> conjugateGradient(
     // Main CG iteration loop
     bool is_converged = false;
     int iter_final = 0;
+
+    // Pre-allocate temporaries used each iteration to avoid repeated allocations
+    VectorType w(b.size());
+    T sigma{};  // (p, A p)
+    T alpha{};  // step size
+    T rho_new{}; // (r_{k+1}, r_{k+1})
+    T beta{};   // direction update factor
     
     for (int iter = 1; iter <= max_iter; ++iter) {
-        // Compute matrix-vector product
-        VectorType w = A * p;
-        
+        // Compute matrix-vector product (SpMV)
+        w = A * p;
+
         // Compute denominator for step size
-        T sigma = p.dot(w);
-        
+        sigma = p.dot(w);
+
         // Compute step size α = (r,r) / (p,Ap)
-        T alpha = rho_old / sigma;
-        
+        alpha = rho_old / sigma;
+
         // Update solution: x = x + α*p
         x = x + alpha * p;
-        
+
         // Update residual: r = r - α*Ap
         r = r - alpha * w;
-        
+
+        // Compute new inner product immediately and reuse below
+        rho_new = r.dot(r);
+
         // Compute current error for analysis
         err = x_true - x;
-        
-        // Record convergence metrics
-        result.hist_relres_2.push_back(to_double(sqrt(r.dot(r)) / norm2_b));
+
+        // Record convergence metrics (reuse rho_new to avoid extra dot)
+        result.hist_relres_2.push_back(to_double(sqrt(rho_new) / norm2_b));
         result.hist_relerr_2.push_back(to_double(sqrt(err.dot(err)) / norm2_x_true));
         result.hist_relerr_A.push_back(to_double(sqrt(err.dot(A * err)) / normA_x_true));
-        
+
         // Check convergence: ||r||₂ / ||b||₂ < tolerance
         if (result.hist_relres_2.back() < tolerance) {
             is_converged = true;
             iter_final = iter;
             break;
         }
-        
-        // Compute new inner product for next β
-        T rho_new = r.dot(r);
-        
+
         // Compute β = (r_{k+1},r_{k+1}) / (r_k,r_k)
-        T beta = rho_new / rho_old;
-        
+        beta = rho_new / rho_old;
+
         // Update for next iteration
         rho_old = rho_new;
-        
+
         // Update search direction: p = r + β*p
         p = r + beta * p;
-        
+
         iter_final = iter;
     }
-    
+
+    auto end_time = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+    result.computation_time = duration.count() / 1000.0;
+
     // Finalize results
     result.iterations_performed = iter_final;
     result.converged = is_converged;
     result.final_residual_norm = result.hist_relres_2.back();
-    
-    auto end_time = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
-    result.computation_time = duration.count() / 1000.0;
     
     // Compute true residual to check for gap with computed residual
     VectorType true_residual = b - A * x;
