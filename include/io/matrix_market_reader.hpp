@@ -26,11 +26,11 @@ inline typename bailey::PrecisionTraits<T>::matrix_type loadMatrixMarket(const s
     try {
         if constexpr (std::is_same_v<T, double>) {
             MatrixType mat;
-            fast_matrix_market::read_matrix_market_eigen(file, mat);
+            fast_matrix_market::read_matrix_market_eigen(file, mat);    // for sparse matrix
             return mat;
         } else {
             Eigen::SparseMatrix<double> tmp;
-            fast_matrix_market::read_matrix_market_eigen(file, tmp);
+            fast_matrix_market::read_matrix_market_eigen(file, tmp);    // for sparse matrix
             MatrixType mat = tmp.template cast<T>();
             return mat;
         }
