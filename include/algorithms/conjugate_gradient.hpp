@@ -72,7 +72,8 @@ CGResult<T> conjugateGradient(
     result.hist_relerr_A.reserve(max_iter + 1);
     
     // Initialize residual: r = b - Ax
-    VectorType r = b - A * x;
+    VectorType r(b.size());
+    r.noalias() = b - A * x;
     
     // Calculate initial error vector
     VectorType err = x_true - x;
@@ -95,7 +96,8 @@ CGResult<T> conjugateGradient(
     int iter_final = 0;
 
     // Pre-allocate temporaries used each iteration to avoid repeated allocations
-    VectorType w(b.size());
+    VectorType w(A.rows());
+    w.setZero();
     T sigma{};  // (p, A p)
     T alpha{};  // step size
     T rho_new{}; // (r_{k+1}, r_{k+1})
@@ -103,7 +105,7 @@ CGResult<T> conjugateGradient(
     
     for (int iter = 1; iter <= max_iter; ++iter) {
         // Compute matrix-vector product (SpMV)
-        w = A * p;
+        w.noalias() = A * p;
 
         // Compute denominator for step size
         sigma = p.dot(w);
@@ -115,7 +117,7 @@ CGResult<T> conjugateGradient(
         x = x + alpha * p;
 
         // Update residual: r = r - α*Ap
-        r = r - alpha * w;
+        r.noalias() -= alpha * w;
 
         // Compute new inner product immediately and reuse below
         rho_new = r.dot(r);
@@ -157,7 +159,8 @@ CGResult<T> conjugateGradient(
     result.final_residual_norm = result.hist_relres_2.back();
     
     // Compute true residual to check for gap with computed residual
-    VectorType true_residual = b - A * x;
+    VectorType true_residual(b.rows());
+    true_residual.noalias() = b - A * x;
     T true_residual_norm = sqrt(true_residual.dot(true_residual));
     result.true_relres_2 = to_double(true_residual_norm / norm2_b);
     
