@@ -74,6 +74,9 @@ Language servers typically read `build/compile_commands.json`. If your editor ex
 ln -sf build/compile_commands.json ./compile_commands.json
 ```
 
+> **Note**
+> If the IDE reports errors because an old `compile_commands.json` still points to stale paths, remove the CMake cache under `build/` and rerun `cmake -S . -B build` to refresh the database.
+
 ## Inputs and Outputs
 
 - Host `./inputs` is mounted to `/work/inputs` (read-only).
