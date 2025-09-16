@@ -1,8 +1,10 @@
 compose.override.yaml
+.DS_Store
 build/
 .cache/
 .ccls-cache/
-inputs/
+inputs/*
+!inputs/.gitkeep
 outputs/
 tmp/
 compile_commands.json
