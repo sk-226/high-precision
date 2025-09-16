@@ -21,6 +21,7 @@ public:
         double tolerance,
         int max_iterations,
         const std::string& rhs,
+        const std::string& precision,
         const std::string& prec,
         const std::string& prec_kv,
         const std::string& prec_label,
@@ -53,6 +54,7 @@ public:
                 << format_double(tolerance) << ','
                 << max_iterations << ','
                 << escape_csv(rhs) << ','
+                << escape_csv(precision) << ','
                 << escape_csv(prec) << ','
                 << escape_csv(prec_kv) << ','
                 << escape_csv(prec_label) << ','
@@ -75,7 +77,7 @@ public:
 
 private:
     static std::string header_line() {
-        return "matrix,n,nnz,solver,tolerance,max_iterations,rhs,prec,prec_kv,prec_label,construction_time,converged,iters,true_relres_2,final_relres_2,final_relerr_2,final_relerr_A,solve_time,solve_status";
+        return "matrix,n,nnz,solver,tolerance,max_iterations,rhs,precision,prec,prec_kv,prec_label,construction_time,converged,iters,true_relres_2,final_relres_2,final_relerr_2,final_relerr_A,solve_time,solve_status";
     }
 
     static bool file_exists_and_nonempty(const std::string& path) {

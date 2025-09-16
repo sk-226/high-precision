@@ -205,6 +205,7 @@ int solveCG(const SolverConfig& config) {
             config.tolerance,
             max_iterations,
             "ones",
+            config.precision_level,
             "none",
             "",
             "CG (none)",
