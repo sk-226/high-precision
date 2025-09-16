@@ -145,8 +145,11 @@ int solveCG(const SolverConfig& config) {
     using MatrixType = typename Traits::matrix_type;
     using VectorType = typename Traits::vector_type;
     
-    std::string matrix_path = config.input_dir + "/" + config.matrix_name + ".mtx";
-    std::cout << "Loading matrix: " << matrix_path << " (precision: " << Traits::name() << ")" << std::endl;
+    // search matrix in the input directory (check the structure of the input directory)
+    // CHECK: Download the matrix with https://github.com/sk-226/ssdownload
+    std::filesystem::path matrix_dir = std::filesystem::path(config.input_dir) / config.matrix_name;
+    std::filesystem::path matrix_path = matrix_dir / (matrix_dir.filename().string() + ".mtx");
+    std::cout << "Loading matrix: " << matrix_path.string() << " (precision: " << Traits::name() << ")" << std::endl;
     
     MatrixType A = io::loadMatrixMarket<T>(matrix_path);
     int n = A.rows();
