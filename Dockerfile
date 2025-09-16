@@ -101,7 +101,7 @@ RUN dnf -y install \
       gdb ripgrep openssh-server openssh \
     && dnf clean all \
     && pip3 install --no-cache-dir \
-      fortls cmake-language-server
+      fortls cmake-language-server fprettify
 
 # 非rootユーザを作成（ホストUID/GIDに合わせられるよう引数化）
 ARG USERNAME=dev
