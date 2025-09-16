@@ -6,5 +6,9 @@ build/
 inputs/*
 !inputs/.gitkeep
 outputs/
+tests/**/fortran/*
+!tests/**/fortran/*.f90
+!tests/**/fortran/*.txt
+!tests/**/fortran/*.scr
 tmp/
 compile_commands.json
