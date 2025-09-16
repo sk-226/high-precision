@@ -21,7 +21,7 @@ extern "C" {
     void qxdiv_(const long double* a, const long double* b, long double* c);      // c = a / b
     void qxdqd_(const double* d, long double* a);                                 // a = (double)d
     void qxsqrt_(const long double* a, long double* b);                           // b = sqrt(a)
-    void qxtoqd_(const long double* a, int* n, char* c, int cl);
+    void qx_to_string(const long double* a, int* n, char* c, int cl);
 }
 
 namespace bailey {
@@ -149,14 +149,14 @@ inline QXNumber abs(const QXNumber& a) {
 // --- Type Conversion ---
 inline std::string to_string(const QXNumber& a, int digits=33) {
     char s[128] = {0};
-    qxtoqd_(&a.qx, &digits, s, sizeof(s));
+    qx_to_string(&a.qx, &digits, s, sizeof(s));
     return std::string(s, strnlen(s, sizeof(s)));
 }
 
 inline double to_double(const QXNumber& a) {
     char s[128] = {0};
     int d = 33;
-    qxtoqd_(&a.qx, &d, s, sizeof(s));
+    qx_to_string(&a.qx, &d, s, sizeof(s));
     try {
         return std::stod(s);
     } catch (...) {
@@ -168,7 +168,7 @@ inline double to_double(const QXNumber& a) {
 inline std::ostream& operator<<(std::ostream& os, const QXNumber& q) {
     char s[128] = {0};
     int digits = 33;
-    qxtoqd_(&q.qx, &digits, s, sizeof(s));
+    qx_to_string(&q.qx, &digits, s, sizeof(s));
     os << s;
     return os;
 }

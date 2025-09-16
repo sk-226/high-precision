@@ -14,7 +14,7 @@ extern "C" {
     void dqdiv_(const long double* a, const long double* b, long double* c);      // c = a / b
     void dqdqd_(const double* d, long double* a);                                  // a = (double)d
     void dqsqrt_(const long double* a, long double* b);                            // b = sqrt(a)
-    void dqtoqd_(const long double* a, int* n, char* c, int cl);
+    void dq_to_string(const long double* a, int* n, char* c, int cl);
 }
 
 namespace bailey {
@@ -68,14 +68,14 @@ inline DQNumber sqrt(const DQNumber& a) {
 // Type Conversion (avoid narrowing to double for precision-sensitive output)
 inline std::string to_string(const DQNumber& a, int digits=64) {
     char s[128] = {0};
-    dqtoqd_(a.dq, &digits, s, sizeof(s));
+    dq_to_string(a.dq, &digits, s, sizeof(s));
     return std::string(s, strnlen(s, sizeof(s)));
 }
 
 inline double to_double(const DQNumber& a) {
     char s[128] = {0};
     int d = 64;
-    dqtoqd_(a.dq, &d, s, sizeof(s));
+    dq_to_string(a.dq, &d, s, sizeof(s));
     try {
         return std::stod(s);
     } catch (...) {
@@ -87,7 +87,7 @@ inline double to_double(const DQNumber& a) {
 inline std::ostream& operator<<(std::ostream& os, const DQNumber& dq) {
     char s[128] = {0}; 
     int digits = 64;
-    dqtoqd_(dq.dq, &digits, s, sizeof(s));
+    dq_to_string(dq.dq, &digits, s, sizeof(s));
     os << s;
     return os;
 }

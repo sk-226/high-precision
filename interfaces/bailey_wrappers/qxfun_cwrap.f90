@@ -40,7 +40,7 @@ subroutine qx_sqrt(a,b) bind(C,name="qxsqrt_")
     b = sqrt(a)
 end subroutine
 
-subroutine qx_tostr(a,nd,s,str_len) bind(C,name="qxtoqd_")
+subroutine qx_tostr(a,nd,s,str_len) bind(C,name="qx_to_string")
     real(qxknd), intent(in) :: a
     integer(c_int), intent(in) :: nd
     character(c_char), intent(out) :: s(str_len)

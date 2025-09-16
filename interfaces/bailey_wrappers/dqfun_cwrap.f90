@@ -77,7 +77,7 @@ subroutine dq_sqrt(a,b) bind(C,name="dqsqrt_")
     b(2) = real(db%dqr(2), c_long_double)
 end subroutine
 
-subroutine dq_tostr(a,nd,s,str_len) bind(C,name="dqtoqd_")
+subroutine dq_tostr(a,nd,s,str_len) bind(C,name="dq_to_string")
     real(c_long_double), intent(in) :: a(2)
     integer(c_int), intent(in) :: nd
     character(c_char), intent(out) :: s(str_len)

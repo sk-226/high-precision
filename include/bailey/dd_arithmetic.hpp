@@ -14,7 +14,7 @@ extern "C" {
     void dddiv_(const double* a, const double* b, double* c);      // c = a / b
     void dddqd_(const double* d, double* a);                       // a = (double)d
     void ddsqrt_(const double* a, double* b);                      // b = sqrt(a)
-    void ddtoqd_(const double* a, int* n, char* c, int cl);
+    void dd_to_string(const double* a, int* n, char* c, int cl);
 }
 
 namespace bailey {
@@ -68,14 +68,14 @@ inline DDNumber sqrt(const DDNumber& a) {
 // Type Conversion (avoid narrowing to double for precision-sensitive output)
 inline std::string to_string(const DDNumber& a, int digits=32) {
     char s[80] = {0};
-    ddtoqd_(a.dd, &digits, s, sizeof(s));
+    dd_to_string(a.dd, &digits, s, sizeof(s));
     return std::string(s, strnlen(s, sizeof(s)));
 }
 
 inline double to_double(const DDNumber& a) {
     char s[80] = {0};
     int d = 32;
-    ddtoqd_(a.dd, &d, s, sizeof(s));
+    dd_to_string(a.dd, &d, s, sizeof(s));
     try {
         return std::stod(s);
     } catch (...) {
@@ -87,7 +87,7 @@ inline double to_double(const DDNumber& a) {
 inline std::ostream& operator<<(std::ostream& os, const DDNumber& d) {
     char s[80] = {0};
     int digits = 32;
-    ddtoqd_(d.dd, &digits, s, sizeof(s));
+    dd_to_string(d.dd, &digits, s, sizeof(s));
     os << s;
     return os;
 }
