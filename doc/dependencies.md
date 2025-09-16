@@ -84,7 +84,7 @@ Each Bailey library produces:
 | Rocky Linux | 9 | ✅ Tested |
 | GCC | 11.5.0 | ✅ Tested |
 | gfortran | 11.5.0 | ✅ Tested |
-| CMake | 3.20+ | ✅ Tested |
+| CMake | 3.21+ | ✅ Tested |
 | Eigen3 | 3.4+ | ✅ Tested |
 
 ### Known Issues
@@ -127,8 +127,11 @@ echo $DDFUN_DIR
 > Inside our containers the project root is `/work`. Inputs are expected under `/work/inputs` (mounted from host `./inputs`).
 ## Floating‑Point Model & Platform Support
 
-- arm64 Linux (container): `long double` is IEEE 754 binary128 → DD/DQ/QX supported.
+- arm64 Linux (container): `long double` is effectively IEEE‑754 binary128 → DD/DQ/QX supported.
 - x86_64 glibc: `long double` is typically 80‑bit extended → DQ/QX unsupported; use DD or run on arm64.
 
 > [!TIP]
 > Verify inside the image: `make run NO_BUILD=1 -- check_ldbl`.
+
+> [!IMPORTANT]
+> Only `dd`, `dq`, and `qx` are supported. The project does not provide `qd` (quad-double, 4×double).

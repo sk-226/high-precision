@@ -24,6 +24,8 @@ make run NO_BUILD=1 -- cg_solver --matrix nos5 --precision dq --tol 1e-15 --max-
 
 > [!IMPORTANT]
 > If you customize the base image or use a local toolchain, verify the floating‑point model before using DQ/QX: `cmake --build build && ./build/check_ldbl`.
+>
+> Only `dd`, `dq`, and `qx` are supported. `qd` (quad-double) is not supported in this project.
 
 ### Local Development Setup
 
@@ -51,15 +53,14 @@ cmake --build build --config Release
 ```
 high-precision/
 ├── src/                    # C++ source code
-│   └── main.cpp           # Main application
+│   └── cg_solver.cpp      # Main solver (CLI)
 ├── interfaces/bailey_wrappers/   # Fortran wrapper files
 │   ├── ddfun_cwrap.f90           # DD wrapper
 │   ├── dqfun_cwrap.f90           # DQ wrapper
 │   └── qxfun_cwrap.f90           # QX wrapper
 ├── doc/                  # Documentation
 ├── CMakeLists.txt        # Build configuration
-├── Dockerfile           # Container definition
-└── CLAUDE.md           # AI assistant instructions
+└── Dockerfile           # Container definition
 ```
 
 ## Build Process Details
@@ -82,7 +83,7 @@ ar rcs lib{prefix}fun.a *.o  # Create static library
 ### 2. Fortran Wrapper Compilation
 
 ```bash
-gfortran -c fortran/qxfun_cwrap.f90 -I${QXFUN_DIR}
+gfortran -c interfaces/bailey_wrappers/qxfun_cwrap.f90 -I${QXFUN_DIR}
 ar rcs ${QXFUN_DIR}/libqxwrap.a qxfun_cwrap.o
 ```
 
@@ -113,22 +114,22 @@ To add a new high-precision function:
 subroutine qx_newfunc(a, result) bind(C, name="qxnewfunc_")
     real(qxknd), intent(in)  :: a
     real(qxknd), intent(out) :: result
-    result = newfunc(a)  ! Call Bailey library function
+    result = newfunc(a)
 end subroutine
 ```
 
 2. **Declare in C++**:
 ```cpp
 extern "C" {
-    void qxnewfunc_(const double* a, double* result);
+    void qxnewfunc_(const long double* a, long double* result);
 }
 ```
 
 3. **Add C++ Wrapper**:
 ```cpp
-QuadDouble newfunc(const QuadDouble& a) {
-    QuadDouble r;
-    qxnewfunc_(a.qd, r.qd);
+bailey::QXNumber newfunc(const bailey::QXNumber& a) {
+    bailey::QXNumber r;
+    qxnewfunc_(&a.qx, &r.qx);
     return r;
 }
 ```
@@ -137,10 +138,9 @@ QuadDouble newfunc(const QuadDouble& a) {
 
 #### C++ Code
 
-- Use `QuadDouble` struct for high-precision numbers
-- Provide operator overloads for natural syntax
-- Include Eigen3 NumTraits specialization for matrix operations
-- Use `to_double()` for conversion when needed
+- Use `bailey::DDNumber` / `DQNumber` / `QXNumber` for high precision
+- Prefer `bailey::PrecisionTraits<T>` for matrix/vector aliases
+- Use `to_double()` only for logging or tolerance checks
 
 #### Fortran Wrappers
 
@@ -153,17 +153,17 @@ QuadDouble newfunc(const QuadDouble& a) {
 
 ### Memory Layout
 
-- **DDFUN**: Uses `real(c_double)` arrays of size 2
-- **DQFUN**: Uses `real(dqknd)` arrays of size 2  
-- **QXFUN**: Uses single `real(qxknd)` values
+- **DDFUN**: `double[2]`
+- **DQFUN**: `long double[2]` (mapped from Fortran `real(dqknd)`)
+- **QXFUN**: single `long double` (mapped from `real(qxknd)`)
 
 ### Precision Handling
 
 ```cpp
 // Converting between precisions
 double d = 1.5;
-QuadDouble qd(d);           // double -> QuadDouble
-double back = to_double(qd); // QuadDouble -> double (for comparisons)
+bailey::QXNumber qx(d);     // double -> QX
+double back = to_double(qx); // QX -> double (for comparisons)
 ```
 
 ### Thread Safety
@@ -198,18 +198,20 @@ Bailey libraries are thread-safe, but:
 
 ### Custom Tests
 
-Modify `src/main.cpp` to test specific functionality:
+Modify `src/experiments/main.cpp` to test specific functionality:
 
 ```cpp
 // Test basic arithmetic
-QuadDouble a(1.0);
-QuadDouble b(2.0);
-QuadDouble c = a + b;
+bailey::QXNumber a(1.0);
+bailey::QXNumber b(2.0);
+auto c = a + b;
 std::cout << "1 + 2 = " << c << std::endl;
 
 // Test matrix operations
-SpMat_QD A = createTestMatrix();
-Vec_QD x = solveWithCG(A, b);
+using T = bailey::QXNumber; // or DDNumber/DQNumber
+using Traits = bailey::PrecisionTraits<T>;
+Traits::matrix_type A = createTestMatrix<T>();
+Traits::vector_type x = solveWithCG<T>(A, /*rhs*/);
 ```
 
 ## Debugging

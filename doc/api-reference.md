@@ -1,278 +1,150 @@
 # API Reference
 
-This document provides comprehensive documentation for the high-precision arithmetic API.
+This document describes the public C++ API used by the solver and examples. The project supports three precision types only:
 
-## QuadDouble Class
+> [!IMPORTANT]
+> Supported: `dd` (double-double), `dq` (double-quad = 2×quad), `qx` (quad/extended). Not supported: `qd` (quad-double, 4×double).
 
-The `QuadDouble` struct provides a C++ interface to Bailey's QX high-precision arithmetic.
+## Precision Types
 
-### Constructor
+- `bailey::DDNumber` — DDFUN, 2×`double`, ~32 digits
+- `bailey::DQNumber` — DQFUN, 2×`long double`, ~64 digits
+- `bailey::QXNumber` — QXFUN, scalar `long double`, ~33 digits
+
+Common functions are provided for all three types via free functions and operators.
+
+### Constructors
 
 ```cpp
-QuadDouble();                    // Default constructor (zero)
-QuadDouble(double val);          // Convert from double precision
+bailey::DDNumber xdd;                 // zero
+bailey::DDNumber xdd_from_double(1.0);
+
+bailey::DQNumber xdq;                 // zero
+bailey::DQNumber xdq_from_double(1.0);
+
+bailey::QXNumber xqx;                 // zero
+bailey::QXNumber xqx_from_double(1.0);
 ```
 
-### Example
+### Arithmetic and Math
+
 ```cpp
-QuadDouble zero;                 // 0.0
-QuadDouble pi(3.14159265359);    // π approximation
+// All types support +,-,*,/ and compound assignments
+auto c = a + b;
+a *= b;
+
+// sqrt
+auto r = sqrt(a);
+
+// to_string / to_double utilities
+std::string s = to_string(a);         // digits default: DD=32, DQ=64, QX=33
+double d = to_double(a);              // best-effort conversion for logging
 ```
 
-## Arithmetic Operations
+> [!TIP]
+> Prefer staying in one precision type during computations. Convert to `double` only for logging or comparisons against loose thresholds.
 
-### Basic Operators
+## Matrix and Vector Types
 
-| Operator | Description | Example |
-|----------|-------------|---------|
-| `+` | Addition | `c = a + b` |
-| `-` | Subtraction | `c = a - b` |
-| `*` | Multiplication | `c = a * b` |
-| `/` | Division | `c = a / b` |
-
-### Assignment Operators
-
-| Operator | Description | Example |
-|----------|-------------|---------|
-| `+=` | Add and assign | `a += b` |
-| `-=` | Subtract and assign | `a -= b` |
-| `*=` | Multiply and assign | `a *= b` |
-| `/=` | Divide and assign | `a /= b` |
-
-### Example Usage
+Use `PrecisionTraits<T>` to obtain the Eigen types for any precision:
 
 ```cpp
-QuadDouble a(2.0);
-QuadDouble b(3.0);
-
-QuadDouble sum = a + b;          // 5.0
-QuadDouble product = a * b;      // 6.0
-
-a += QuadDouble(1.0);            // a becomes 3.0
-b *= QuadDouble(2.0);            // b becomes 6.0
+using Traits = bailey::PrecisionTraits<bailey::QXNumber>; // or DDNumber/DQNumber/double
+using Matrix = Traits::matrix_type;   // Eigen::SparseMatrix<T>
+using Vector = Traits::vector_type;   // Eigen::Vector<T, Eigen::Dynamic>
 ```
 
-## Mathematical Functions
-
-### Square Root
+### Constructing Matrices
 
 ```cpp
-QuadDouble sqrt(const QuadDouble& x);
-```
-
-Computes the square root with quad precision.
-
-**Example:**
-```cpp
-QuadDouble x(2.0);
-QuadDouble result = sqrt(x);     // √2 with ~128 digit precision
-```
-
-### Utility Functions
-
-```cpp
-double to_double(const QuadDouble& x);
-```
-
-Converts QuadDouble to double precision for comparisons and output.
-
-**Example:**
-```cpp
-QuadDouble x(3.14159265359);
-double approx = to_double(x);    // 3.14159265359 (double precision)
-```
-
-## Matrix Operations
-
-### Type Definitions
-
-```cpp
-using SpMat_QD = Eigen::SparseMatrix<QuadDouble>;
-using Vec_QD = Eigen::Vector<QuadDouble, Eigen::Dynamic>;
-```
-
-### Matrix Construction
-
-```cpp
-// Create sparse matrix
 const int n = 5;
-SpMat_QD A(n, n);
-
-// Fill with triplets
-std::vector<Eigen::Triplet<QuadDouble>> triplets;
-for (int i = 0; i < n; ++i) {
-    triplets.push_back(Eigen::Triplet<QuadDouble>(i, i, QuadDouble(4.0)));
-}
+Matrix A(n, n);
+std::vector<Eigen::Triplet<Traits::scalar_type>> triplets;
+for (int i = 0; i < n; ++i) triplets.emplace_back(i, i, Traits::scalar_type(4.0));
 A.setFromTriplets(triplets.begin(), triplets.end());
-```
 
-### Vector Operations
-
-```cpp
-// Create vector
-Vec_QD x(n);
-for (int i = 0; i < n; ++i) {
-    x(i) = QuadDouble(1.0);
-}
-
-// Matrix-vector multiplication
-Vec_QD b = A * x;
-
-// Vector operations
-QuadDouble norm_squared = x.dot(x);
-QuadDouble norm = sqrt(norm_squared);
+Vector x = Vector::Ones(n);
+Vector b = A * x;
 ```
 
 ## Conjugate Gradient Solver
 
-### Function Signature
-
 ```cpp
-int conjugateGradient(const SpMat_QD& A, const Vec_QD& b, Vec_QD& x, 
-                     int max_iter, double tolerance);
-```
-
-### Parameters
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `A` | `const SpMat_QD&` | Coefficient matrix (must be symmetric positive definite) |
-| `b` | `const Vec_QD&` | Right-hand side vector |
-| `x` | `Vec_QD&` | Solution vector (input: initial guess, output: solution) |
-| `max_iter` | `int` | Maximum number of iterations |
-| `tolerance` | `double` | Convergence tolerance |
-
-### Return Value
-
-Returns the number of iterations taken to converge, or `max_iter` if convergence failed.
-
-### Example Usage
-
-```cpp
-// Create system Ax = b
-SpMat_QD A = createMatrix();
-Vec_QD b = createRHS();
-Vec_QD x = Vec_QD::Zero(A.cols());  // Initial guess
-
-// Solve
-int iterations = conjugateGradient(A, b, x, 1000, 1e-12);
-
-if (iterations < 1000) {
-    std::cout << "Converged in " << iterations << " iterations" << std::endl;
-} else {
-    std::cout << "Failed to converge" << std::endl;
+// include/algorithms/conjugate_gradient.hpp
+namespace algorithms {
+  template<typename T>
+  CGResult<T> conjugateGradient(
+      const bailey::PrecisionTraits<T>::matrix_type& A,
+      const bailey::PrecisionTraits<T>::vector_type& b,
+      bailey::PrecisionTraits<T>::vector_type& x,
+      const bailey::PrecisionTraits<T>::vector_type& x_true,
+      int max_iter,
+      double tolerance);
 }
 ```
 
-## Fortran Interface Functions
+Result fields include `iterations_performed`, `converged`, `hist_relres_2`, `true_relres_2`, and `computation_time`.
 
-### Core Arithmetic (QX Functions)
+### Example
 
-These functions provide the low-level interface to Bailey's QXFUN library:
+```cpp
+using T = bailey::DQNumber;                   // choose DDNumber/DQNumber/QXNumber
+using Traits = bailey::PrecisionTraits<T>;
+Traits::matrix_type A = /* ... */;
+Traits::vector_type b = /* ... */;
+Traits::vector_type x = Traits::vector_type::Zero(A.cols());
+auto result = algorithms::conjugateGradient<T>(A, b, x, Traits::vector_type::Ones(A.cols()), 1000, 1e-12);
+```
+
+## Low-level Fortran Interfaces
+
+These are declared and used internally. Signatures (as seen in headers):
 
 ```cpp
 extern "C" {
-    void qxadd_(const double* a, const double* b, double* c);    // c = a + b
-    void qxsub_(const double* a, const double* b, double* c);    // c = a - b  
-    void qxmul_(const double* a, const double* b, double* c);    // c = a * b
-    void qxdiv_(const double* a, const double* b, double* c);    // c = a / b
-    void qxdqd_(const double* d, double* a);                     // a = (QuadDouble)d
-    void qxsqrt_(const double* a, double* b);                    // b = sqrt(a)
-    void qxtoqd_(const double* a, int* n, char* c, int cl);     // Convert to string
+  // DD (arrays of 2 doubles)
+  void ddadd_(const double*, const double*, double*);
+  void ddsub_(const double*, const double*, double*);
+  void ddmul_(const double*, const double*, double*);
+  void dddiv_(const double*, const double*, double*);
+  void dddqd_(const double* d, double* a);
+  void ddsqrt_(const double* a, double* b);
+  void dd_to_string(const double* a, int* n, char* c, int cl);
+
+  // DQ (arrays of 2 long doubles)
+  void dqadd_(const long double*, const long double*, long double*);
+  void dqsub_(const long double*, const long double*, long double*);
+  void dqmul_(const long double*, const long double*, long double*);
+  void dqdiv_(const long double*, const long double*, long double*);
+  void dqdqd_(const double* d, long double* a);
+  void dqsqrt_(const long double* a, long double* b);
+  void dq_to_string(const long double* a, int* n, char* c, int cl);
+
+  // QX (scalar long double)
+  void qxadd_(const long double*, const long double*, long double*);
+  void qxsub_(const long double*, const long double*, long double*);
+  void qxmul_(const long double*, const long double*, long double*);
+  void qxdiv_(const long double*, const long double*, long double*);
+  void qxdqd_(const double* d, long double* a);
+  void qxsqrt_(const long double* a, long double* b);
+  void qx_to_string(const long double* a, int* n, char* c, int cl);
 }
 ```
 
-### Usage Notes
-
-- All functions operate on arrays of 4 doubles (QuadDouble internal representation)
-- Input parameters are typically `const double*`
-- Output parameters are `double*`
-- These functions are wrapped by the C++ QuadDouble interface
-
-### Direct Usage (Advanced)
-
-```cpp
-// Direct function call (not recommended for normal use)
-QuadDouble a(2.0), b(3.0), result;
-qxadd_(a.qd, b.qd, result.qd);  // result = a + b
-```
+> [!WARNING]
+> The QX/DQ C ABI relies on `long double`. On x86_64 glibc, this is 80‑bit extended, which does not match Fortran quad. Use the provided arm64 container for DQ/QX.
 
 ## Output and Formatting
 
-### String Conversion
-
-The `qxtoqd_` function converts QuadDouble to string representation:
-
 ```cpp
-std::ostream& operator<<(std::ostream& os, const QuadDouble& q);
+// Stream output uses library formatting with default digits per type
+std::cout << bailey::QXNumber(3.141592653589793L) << "\n";  // ~33 digits
 ```
 
-**Example:**
-```cpp
-QuadDouble pi(3.141592653589793);
-std::cout << "π = " << pi << std::endl;
-// Output: π = 3.141592653589793E+00
-```
+To control digits, call the `*_to_string` Fortran functions (see headers) and print the returned buffer.
 
-### Precision Control
+## Performance Notes
 
-The string conversion uses 15 decimal digits by default. To modify precision, you would need to call the Fortran function directly:
-
-```cpp
-QuadDouble x(3.14159265359);
-char buffer[70];
-int precision = 20;
-qxtoqd_(x.qd, &precision, buffer, sizeof(buffer));
-```
-
-## Error Handling
-
-### Common Issues
-
-1. **Division by Zero**: Results in infinite or NaN values
-2. **Invalid Operations**: Square root of negative numbers
-3. **Convergence Failure**: CG solver may not converge for ill-conditioned matrices
-
-### Best Practices
-
-```cpp
-// Check for valid input
-if (to_double(denominator) != 0.0) {
-    QuadDouble result = numerator / denominator;
-}
-
-// Verify matrix properties for CG
-// (Matrix should be symmetric positive definite)
-
-// Check convergence
-int iterations = conjugateGradient(A, b, x, max_iter, tol);
-if (iterations >= max_iter) {
-    std::cerr << "Warning: CG failed to converge" << std::endl;
-}
-```
-
-## Performance Considerations
-
-### Computational Cost
-
-High-precision operations are significantly more expensive:
-
-| Operation | Relative Cost |
-|-----------|---------------|
-| Addition/Subtraction | ~10-50x slower than double |
-| Multiplication | ~50-100x slower than double |
-| Division | ~100-200x slower than double |
-| Square Root | ~200-500x slower than double |
-
-### Optimization Tips
-
-1. **Minimize Precision Conversions**: Avoid frequent double ↔ QuadDouble conversions
-2. **Batch Operations**: Use Eigen3 vector/matrix operations when possible
-3. **Algorithm Choice**: Sometimes algorithmic improvements are better than higher precision
-4. **Memory Access**: High-precision numbers use more memory, affecting cache performance
-
-### Memory Usage
-
-- `QuadDouble`: 32 bytes (4 × 8-byte doubles)
-- `double`: 8 bytes
-- Sparse matrices scale accordingly with chosen precision
+- Extended precision is slower than `double` by 1–2 orders of magnitude.
+- Memory footprint scales with the scalar size: DD≈16 bytes, DQ≈32 bytes (arm64), QX≈16 bytes (arm64).
+- Minimize precision conversions and prefer batched Eigen operations.

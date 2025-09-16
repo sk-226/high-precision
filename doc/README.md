@@ -2,12 +2,15 @@
 
 This project implements high-precision numerical analysis using David H. Bailey's DD/DQ/QX libraries with Eigen3 for sparse matrix computations.
 
+> [!IMPORTANT]
+> Supported precisions are only: `dd` (double-double), `dq` (double-quad = 2×quad), and `qx` (quad/extended). The project does not use or provide `qd` (quad-double, 4×double). Use the exact names `dd`, `dq`, or `qx` for `--precision`.
+
 ## Overview
 
 This project bridges Fortran-based high-precision arithmetic libraries with C++ linear algebra, enabling quad-precision conjugate gradient (CG) method for sparse matrices.
 
 > [!IMPORTANT]
-> Platform support: arm64 Linux (container) — DD/DQ/QX supported (`long double` = IEEE 754 binary128). x86_64 glibc — DQ/QX unsupported (`long double` ≠ binary128); use DD or run on arm64.
+> Platform support: arm64 Linux (container) — DD/DQ/QX supported (`long double` ≈ IEEE‑754 binary128). x86_64 glibc — DQ/QX unsupported (`long double` is 80‑bit extended); use DD or run inside the provided arm64 container.
 
 > [!TIP]
 > Quick check inside the image: `make run NO_BUILD=1 -- check_ldbl`.
@@ -17,11 +20,11 @@ This project bridges Fortran-based high-precision arithmetic libraries with C++ 
 
 ### Precision Levels
 
-- **DDFUN**: Double-double precision (~32 decimal digits)
-- **DQFUN**: Quad-double precision (~64 decimal digits) 
-- **QXFUN**: Extended quad precision (~128+ decimal digits)
+- **DD (DDFUN)**: double-double (~30–32 decimal digits)
+- **DQ (DQFUN)**: double-quad = 2×quad (~64 decimal digits)
+- **QX (QXFUN)**: single quad/extended (~33 decimal digits)
 
-The current implementation uses QXFUN for maximum precision.
+The solver supports all three. Pick via `--precision dd|dq|qx`.
 
 ## Quick Start
 
@@ -66,10 +69,10 @@ See [Dependencies](dependencies.md) for detailed setup instructions, and [Remote
 
 ## Key Features
 
-- **High-Precision Arithmetic**: Up to 128+ decimal digits of precision
+- **High-Precision Arithmetic**: Up to ~64 decimal digits (DQ) and ~33 digits (QX)
 - **Sparse Matrix Support**: Efficient sparse linear algebra with Eigen3
 - **Cross-Language Integration**: Fortran libraries accessible from C++
-- **Thread-Safe**: Bailey libraries are 100% thread-safe
+- **Concurrency-Friendly**: Our wrappers are stateless; using separate data per thread is safe. Coordinate access when sharing matrices/vectors.
 - **Containerized**: Complete Docker development environment
 
 ## Example Output

@@ -70,18 +70,15 @@ da = d  ! This will fail
 #### Error: `C++ template instantiation failed`
 
 ```
-error: no match for 'operator+=' (operand types are 'QuadDouble' and 'QuadDouble')
+error: no match for 'operator+=' (...)
 ```
 
-**Cause**: Missing operator overloads in QuadDouble struct.
+**Cause**: Using a precision type without the project headers, or mixing raw `long double` with `bailey::QXNumber`/`DQNumber`/`DDNumber`.
 
-**Solution**: Ensure all required operators are defined:
+**Solution**: Include the correct headers and stay within one precision type:
 ```cpp
-// Required operators for Eigen3 integration
-QuadDouble& operator+=(QuadDouble& a, const QuadDouble& b);
-QuadDouble& operator-=(QuadDouble& a, const QuadDouble& b);
-QuadDouble& operator*=(QuadDouble& a, const QuadDouble& b);
-QuadDouble& operator/=(QuadDouble& a, const QuadDouble& b);
+#include "bailey/qx_arithmetic.hpp"  // or dd_arithmetic.hpp / dq_arithmetic.hpp
+// use bailey::QXNumber and operators defined there
 ```
 
 ### Linking Errors
@@ -145,20 +142,21 @@ write(tmp, '(ES0.' // trim(fmt_str) // ')') a
 
 #### Error: `Segmentation fault in matrix operations`
 
-**Cause**: Usually memory access issues or uninitialized QuadDouble values.
+**Cause**: Usually memory access issues or uninitialized user variables.
 
 **Solution**:
 ```cpp
 // Ensure proper initialization
-QuadDouble q;                    // May contain garbage
-QuadDouble q_safe(0.0);         // Properly initialized
+bailey::QXNumber q;             // Default-initialized to 0 in our wrapper
+bailey::QXNumber q_safe(0.0);
 
 // Check matrix dimensions
 assert(A.rows() == b.size());
 assert(A.cols() == x.size());
 
 // Initialize solution vector
-Vec_QD x = Vec_QD::Zero(n);     // Not just Vec_QD x(n);
+// Use Zero/Ones constructors from Eigen
+auto x = Traits::vector_type::Zero(n);
 ```
 
 ### Numerical Issues
@@ -172,14 +170,11 @@ Vec_QD x = Vec_QD::Zero(n);     // Not just Vec_QD x(n);
 
 **Diagnosis**:
 ```cpp
-// Check matrix condition
-SpMat_QD A = createMatrix();
-// Compute condition number (requires additional implementation)
-
-// Check residual manually
-Vec_QD residual = b - A * x;
-QuadDouble residual_norm = sqrt(residual.dot(residual));
-std::cout << "Residual norm: " << residual_norm << std::endl;
+using T = bailey::DQNumber; // choose precision
+using Traits = bailey::PrecisionTraits<T>;
+auto residual = b - A * x;
+auto residual_norm = sqrt(residual.dot(residual));
+std::cout << "Residual norm: " << to_double(residual_norm) << std::endl;
 ```
 
 **Solutions**:
@@ -189,21 +184,21 @@ std::cout << "Residual norm: " << residual_norm << std::endl;
 
 #### Issue: `Loss of precision in mixed arithmetic`
 
-**Problem**: Mixing double and QuadDouble operations loses precision.
+**Problem**: Mixing `double` and high‑precision numbers loses precision.
 
 ```cpp
 // Problematic: precision loss
-QuadDouble a(very_precise_value);
+bailey::QXNumber a(very_precise_value);
 double b = 2.0;
-QuadDouble result = a + b;  // b converted to double precision first
+auto result = a + bailey::QXNumber(b);  // convert explicitly
 ```
 
 **Solution**: Use consistent precision:
 ```cpp
 // Better: maintain full precision
-QuadDouble a(very_precise_value);
-QuadDouble b(2.0);          // Explicit QuadDouble conversion
-QuadDouble result = a + b;  // Full precision maintained
+bailey::QXNumber a(very_precise_value);
+bailey::QXNumber bq(2.0);   // explicit
+auto result = a + bq;       // full precision maintained
 ```
 
 ## Performance Issues
@@ -217,16 +212,16 @@ QuadDouble result = a + b;  // Full precision maintained
 **Optimization strategies**:
 ```cpp
 // 1. Minimize precision conversions
-QuadDouble sum(0.0);
+bailey::QXNumber sum(0.0);
 for (int i = 0; i < n; ++i) {
-    sum += vector[i];           // Good: stay in QuadDouble
+    sum += vec_qx[i];           // Stay in the chosen precision
 }
 double final = to_double(sum);  // Convert only once at end
 
 // 2. Use sparse matrix benefits
-SpMat_QD A_sparse;              // Only store non-zeros
+Eigen::SparseMatrix<bailey::DQNumber> A_sparse;  // Only store non-zeros
 // vs
-Matrix<QuadDouble> A_dense;     // Stores all n² elements
+Eigen::Matrix<bailey::DQNumber, Eigen::Dynamic, Eigen::Dynamic> A_dense; // Stores all n^2
 
 // 3. Algorithm selection
 // Sometimes better algorithm > higher precision
@@ -236,13 +231,13 @@ Matrix<QuadDouble> A_dense;     // Stores all n² elements
 
 #### Issue: `Excessive memory usage`
 
-**Cause**: QuadDouble uses 32 bytes vs 8 bytes for double.
+**Cause**: High-precision scalars use more bytes than `double` (e.g., on arm64: DD≈16 B, QX≈16 B, DQ≈32 B).
 
 **Memory usage comparison**:
 ```
 1M × 1M sparse matrix:
 - Double: ~80 MB (1% density)
-- QuadDouble: ~320 MB (1% density)
+- DQ-like (32-byte scalar): ~320 MB (1% density)
 ```
 
 **Solutions**:
@@ -291,7 +286,7 @@ docker run -w /work/build bailey-hp ./sample_qx
 
 ### IDE and Editor Problems
 
-#### Issue: `C++ intellisense errors with QuadDouble`
+#### Issue: `C++ intellisense errors with custom precision types`
 
 **Cause**: IDE doesn't understand custom type definitions.
 
@@ -309,17 +304,11 @@ ln -s build/compile_commands.json .
 
 ### Debugging
 
-#### Issue: `GDB doesn't show QuadDouble values correctly`
+#### Issue: `GDB doesn't show high-precision values correctly`
 
 **Solution**: Add GDB pretty printer or use manual inspection:
 ```gdb
-# Manual inspection
-print q.qd[0]
-print q.qd[1] 
-print q.qd[2]
-print q.qd[3]
-
-# Or convert to double for approximation
+# Convert to double for approximation
 print to_double(q)
 ```
 

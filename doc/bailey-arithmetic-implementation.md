@@ -2,7 +2,7 @@
 
 ## Overview
 
-本プロジェクトでは、David H. Bailey氏のhigh-precision arithmetic libraries（DDFUN, DQFUN, QXFUN）をC++から使用するために、C++の演算子オーバーロード機能を活用してFortranライブラリへのインターフェースを実装しています。
+This project implements an interface that combines C++ operator overloading with C-compatible wrappers (bind(C)) around David H. Bailey's high-precision arithmetic libraries (DDFUN, DQFUN, QXFUN) so they can be used from C++.
 
 ## Architecture
 
@@ -11,70 +11,97 @@
 ```
 C++ Application Layer
      ↓ (operator overloading)
-QuadDouble struct + operators
+Precision types (DD/DQ/QX) + operators
      ↓ (extern "C" calls)
-Fortran Wrapper Layer (qxfun_cwrap.f90)
+Fortran Wrapper Layer (ddfun_cwrap.f90 / dqfun_cwrap.f90 / qxfun_cwrap.f90)
      ↓ (bind(C) interface)
-Bailey's QX Library (Fortran)
+Bailey Libraries (Fortran)
      ↓ (actual computation)
 High-Precision Arithmetic
 ```
 
-## QuadDouble Data Structure
-
-### Internal Representation
+## Precision Data Structures
 
 ```cpp
-struct QuadDouble {
-    double qd[4] = {0.0, 0.0, 0.0, 0.0};
-    QuadDouble() = default;
-    QuadDouble(double val) { qxdqd_(&val, qd); }
-};
+namespace bailey {
+  struct DDNumber { double      dd[2];      };  // 2×double
+  struct DQNumber { long double dq[2];      };  // 2×long double
+  struct QXNumber { long double qx;         };  // 1×long double
+}
 ```
 
-**Bailey QX Library Internal Format:**
-- `qd[0] + qd[1] + qd[2] + qd[3]` = actual high-precision value
-- `qd[0]`: Most significant part (highest order bits)
-- `qd[1]`: First correction term
-- `qd[2]`: Second correction term  
-- `qd[3]`: Third correction term
+**Fortran internal representation:**
+- DD: `type(dd_real)` with `real(ddknd) ddr(2)`
+- DQ: `type(dq_real)` with `real(dqknd) dqr(2)`
+- QX: single scalar `real(qxknd)`
 
-**Precision Level:**
-- QX: ~128 decimal digits (quad-precision extended)
-- DQ: ~64 decimal digits (quad-double)
-- DD: ~32 decimal digits (double-double)
+> [!IMPORTANT]
+> QX/DQ use `long double` on the C side. On x86_64 glibc this is the 80-bit extended format and does not match the Fortran `real(16)` ABI, so run DQ/QX inside the arm64 container when possible. Use DD if reproducibility is your priority.
+
+## DD/DQ Data Structures and Interop
+
+### DD (Double-Double)
+
+```fortran
+type dd_real
+    sequence
+    real(ddknd) ddr(2)
+end type
+```
+
+```cpp
+namespace bailey {
+struct DDNumber { double dd[2]; };
+extern "C" {
+    void ddadd_(const double*, const double*, double*);
+    void ddsub_(const double*, const double*, double*);
+    void ddmul_(const double*, const double*, double*);
+    void dddiv_(const double*, const double*, double*);
+    void dddqd_(const double* d, double* a);
+    void ddsqrt_(const double* a, double* b);
+    void dd_to_string(const double* a, int* n, char* c, int cl);
+}
+}
+```
+
+### DQ (Double-Quad)
+
+```fortran
+type dq_real
+    sequence
+    real(dqknd) dqr(2)
+end type
+```
+
+```cpp
+namespace bailey {
+struct DQNumber { long double dq[2]; };
+extern "C" {
+    void dqadd_(const long double*, const long double*, long double*);
+    void dqsub_(const long double*, const long double*, long double*);
+    void dqmul_(const long double*, const long double*, long double*);
+    void dqdiv_(const long double*, const long double*, long double*);
+    void dqdqd_(const double* d, long double* a);
+    void dqsqrt_(const long double* a, long double* b);
+    void dq_to_string(const long double* a, int* n, char* c, int cl);
+}
+}
+```
+
+### Usage Notes (DD/DQ)
+
+- On the C++ side both `DDNumber` and `DQNumber` store their two-term expansions in arrays, and the operators are thin wrappers around the Fortran routines.
+- We standardized the stringification helpers to the `*_to_string` naming scheme.
+- DQ relies on a `long double` ABI, so behavior can vary by platform (use the Docker image for consistency).
 
 ## Operator Overloading Implementation
 
 ### Basic Arithmetic Operators
 
 ```cpp
-// Addition: a + b
-QuadDouble operator+(const QuadDouble& a, const QuadDouble& b) { 
-    QuadDouble r; 
-    qxadd_(a.qd, b.qd, r.qd);  // Calls Bailey's qxadd Fortran routine
-    return r; 
-}
-
-// Subtraction: a - b  
-QuadDouble operator-(const QuadDouble& a, const QuadDouble& b) { 
-    QuadDouble r; 
-    qxsub_(a.qd, b.qd, r.qd);  // Calls Bailey's qxsub Fortran routine
-    return r; 
-}
-
-// Multiplication: a * b
-QuadDouble operator*(const QuadDouble& a, const QuadDouble& b) { 
-    QuadDouble r; 
-    qxmul_(a.qd, b.qd, r.qd);  // Calls Bailey's qxmul Fortran routine
-    return r; 
-}
-
-// Division: a / b
-QuadDouble operator/(const QuadDouble& a, const QuadDouble& b) { 
-    QuadDouble r; 
-    qxdiv_(a.qd, b.qd, r.qd);  // Calls Bailey's qxdiv Fortran routine
-    return r; 
+// Example (QX): a + b
+bailey::QXNumber operator+(const bailey::QXNumber& a, const bailey::QXNumber& b) {
+  bailey::QXNumber r; qxadd_(&a.qx, &b.qx, &r.qx); return r;
 }
 ```
 
@@ -82,7 +109,7 @@ QuadDouble operator/(const QuadDouble& a, const QuadDouble& b) {
 
 ```cpp
 // Compound assignment: a += b
-QuadDouble& operator+=(QuadDouble& a, const QuadDouble& b) { 
+QXNumber& operator+=(QXNumber& a, const QXNumber& b) { 
     a = a + b;  // Uses operator+ defined above
     return a; 
 }
@@ -94,9 +121,9 @@ QuadDouble& operator+=(QuadDouble& a, const QuadDouble& b) {
 
 ```cpp
 // Square root
-QuadDouble sqrt(const QuadDouble& a) { 
-    QuadDouble r; 
-    qxsqrt_(a.qd, r.qd);  // Calls Bailey's qxsqrt Fortran routine
+QXNumber sqrt(const QXNumber& a) { 
+    QXNumber r; 
+    qxsqrt_(&a.qx, &r.qx);  // Calls Bailey's qxsqrt Fortran routine
     return r; 
 }
 ```
@@ -105,68 +132,48 @@ QuadDouble sqrt(const QuadDouble& a) {
 
 ### Fortran-to-C Interface
 
-**File: `fortran/qxfun_cwrap.f90`**
+The C ABI for QX uses a scalar `real(qxknd)` (received on the C++ side as a `long double*`):
 
 ```fortran
-! Fortran wrapper with C-compatible interface
-module qxfun_cwrap
-    use iso_c_binding
-    use qxfunmod
-    implicit none
-
-contains
-    ! Addition wrapper
-    subroutine qxadd_c(a, b, c) bind(c, name='qxadd_')
-        real(c_double), intent(in) :: a(4), b(4)
-        real(c_double), intent(out) :: c(4)
-        
-        type(qx_real) :: qa, qb, qc
-        
-        ! Convert C arrays to QX format
-        qa%qxr(:) = real(a(:), qxknd)
-        qb%qxr(:) = real(b(:), qxknd)
-        
-        ! Perform high-precision addition
-        call qxadd(qa, qb, qc)
-        
-        ! Convert back to C format
-        c(:) = real(qc%qxr(:), c_double)
-    end subroutine qxadd_c
-end module
+subroutine qx_add(a,b,c) bind(C,name="qxadd_")
+  real(qxknd), intent(in)  :: a, b
+  real(qxknd), intent(out) :: c
+  c = a + b
+end subroutine
 ```
 
 ### C++ External Declarations
 
 ```cpp
 extern "C" {
-    void qxadd_(const double* a, const double* b, double* c);  // a + b = c
-    void qxsub_(const double* a, const double* b, double* c);  // a - b = c
-    void qxmul_(const double* a, const double* b, double* c);  // a * b = c
-    void qxdiv_(const double* a, const double* b, double* c);  // a / b = c
-    void qxdqd_(const double* d, double* a);                   // double → QX
-    void qxsqrt_(const double* a, double* b);                  // sqrt(a) = b
-    void qxtoqd_(const double* a, int* n, char* c, int cl);   // QX → string
+    void qxadd_(const long double* a, const long double* b, long double* c);  // a + b = c
+    void qxsub_(const long double* a, const long double* b, long double* c);  // a - b = c
+    void qxmul_(const long double* a, const long double* b, long double* c);  // a * b = c
+    void qxdiv_(const long double* a, const long double* b, long double* c);  // a / b = c
+    void qxdqd_(const double* d, long double* a);                             // double → QX
+    void qxsqrt_(const long double* a, long double* b);                       // sqrt(a) = b
+    void qx_to_string(const long double* a, int* n, char* c, int cl);         // QX → string
 }
 ```
 
 ## Type Conversion Functions
 
-### Double to QuadDouble
+### Double to QXNumber
 
 ```cpp
-QuadDouble(double val) { 
-    qxdqd_(&val, qd);  // Calls Bailey's conversion routine
+QXNumber(double val) { 
+    qx = static_cast<long double>(val);  // Cast to long double
 }
 ```
 
-### QuadDouble to Double
+### QXNumber to Double
 
 ```cpp
-double to_double(const QuadDouble& a) { 
+double to_double(const QXNumber& a) { 
     // Use Bailey's string conversion for accuracy
     char s[70]; 
     int d = 15; 
-    qxtoqd_(a.qd, &d, s, sizeof(s));
+    qx_to_string(&a.qx, &d, s, sizeof(s));
     
     // Parse string to double
     std::string str(s, sizeof(s));
@@ -178,7 +185,7 @@ double to_double(const QuadDouble& a) {
     try {
         return std::stod(str);
     } catch (...) {
-        return a.qd[0];  // Fallback to most significant part
+        return static_cast<double>(a.qx);  // Fallback to most significant part
     }
 }
 ```
@@ -186,12 +193,12 @@ double to_double(const QuadDouble& a) {
 ### String Output
 
 ```cpp
-std::ostream& operator<<(std::ostream& os, const QuadDouble& q) {
-    char s[70]; 
-    int d = 15; 
-    qxtoqd_(q.qd, &d, s, sizeof(s));  // Convert to formatted string
-    os << std::string(s, sizeof(s)); 
-    return os;
+std::ostream& operator<<(std::ostream& os, const QXNumber& q) {
+  char s[128] = {0};
+  int d = 33;
+  qx_to_string(&q.qx, &d, s, sizeof(s));
+  os << s;
+  return os;
 }
 ```
 
@@ -201,40 +208,37 @@ std::ostream& operator<<(std::ostream& os, const QuadDouble& q) {
 
 ```cpp
 namespace Eigen {
-    template<> struct NumTraits<QuadDouble> : GenericNumTraits<QuadDouble> {
-        typedef QuadDouble Real; 
-        typedef QuadDouble NonInteger; 
-        typedef QuadDouble Nested;
+    template<> struct NumTraits<bailey::QXNumber> : GenericNumTraits<bailey::QXNumber> {
+        typedef bailey::QXNumber Real; 
+        typedef bailey::QXNumber NonInteger; 
+        typedef bailey::QXNumber Nested;
         
         enum { 
             IsComplex = 0, 
             IsInteger = 0, 
             IsSigned = 1, 
             RequireInitialization = 1, 
-            ReadCost = 4,      // Cost of reading a value
-            AddCost = 32,      // Cost of addition operation
-            MulCost = 64       // Cost of multiplication operation
+            ReadCost = 1,
+            AddCost = 8,
+            MulCost = 16
         };
     };
 }
 ```
 
-This specialization enables Eigen3 to work with QuadDouble types in:
-- Sparse matrices: `Eigen::SparseMatrix<QuadDouble>`
-- Dense vectors: `Eigen::Vector<QuadDouble, Eigen::Dynamic>`
-- Matrix operations: dot products, matrix-vector multiplication, etc.
+This specialization lets the precision types participate in Eigen3 sparse and dense operations (see the headers for details).
 
 ## Usage Examples
 
 ### Basic Arithmetic
 
 ```cpp
-QuadDouble a(1.0);
-QuadDouble b(3.0);
+QXNumber a(1.0);
+QXNumber b(3.0);
 
-QuadDouble sum = a + b;        // Uses operator+, calls qxadd_
-QuadDouble product = a * b;    // Uses operator*, calls qxmul_
-QuadDouble quotient = b / a;   // Uses operator/, calls qxdiv_
+QXNumber sum = a + b;        // Uses operator+, calls qxadd_
+QXNumber product = a * b;    // Uses operator*, calls qxmul_
+QXNumber quotient = b / a;   // Uses operator/, calls qxdiv_
 
 std::cout << "Sum: " << sum << std::endl;  // Uses operator<<
 ```
@@ -242,63 +246,56 @@ std::cout << "Sum: " << sum << std::endl;  // Uses operator<<
 ### Vector Operations (with Eigen3)
 
 ```cpp
-using Vec_QD = Eigen::Vector<QuadDouble, Eigen::Dynamic>;
+using Vec_QX = Eigen::Vector<bailey::QXNumber, Eigen::Dynamic>;
 
-Vec_QD x = Vec_QD::Ones(100);      // Vector of QuadDouble(1.0)
-Vec_QD y = Vec_QD::Zero(100);      // Vector of QuadDouble(0.0)
+Vec_QX x = Vec_QX::Ones(100);      // Vector of QXNumber(1.0)
+Vec_QX y = Vec_QX::Zero(100);      // Vector of QXNumber(0.0)
 
-QuadDouble dot_product = x.dot(y); // Eigen3 calls our operators internally
+bailey::QXNumber dot_product = x.dot(y); // Eigen3 calls our operators internally
 ```
 
 ### Sparse Matrix Operations
 
 ```cpp
-using SpMat_QD = Eigen::SparseMatrix<QuadDouble>;
+using SpMat_QX = Eigen::SparseMatrix<bailey::QXNumber>;
 
-SpMat_QD A(100, 100);
-Vec_QD x(100), b(100);
+SpMat_QX A(100, 100);
+Vec_QX x(100), b(100);
 
 // Matrix-vector multiplication
-Vec_QD result = A * x;  // Eigen3 uses our QuadDouble operators
+Vec_QX result = A * x;  // Eigen3 uses our QXNumber operators
 ```
 
 ## Performance Considerations
 
 ### Computational Costs
 
-1. **Operator Calls**: Each `+`, `-`, `*`, `/` operation involves:
-   - C++ → Fortran interface call
-   - Array copying (4 doubles)
-   - High-precision arithmetic computation
-   - Return value copying
+1. **Operator Calls**: `+`, `-`, `*`, `/` involve C/Fortran calls plus high-precision computation.
 
 2. **Memory Usage**: 
-   - QuadDouble: 32 bytes (4 × 8 bytes)
-   - Standard double: 8 bytes
-   - **4x memory overhead**
+   - QXNumber: sizeof(long double)
+   - Standard double: sizeof(double)
+   - Overhead depends on platform (e.g., binary128 vs x86 extended)
 
-3. **Speed Comparison**:
-   - QuadDouble operations: ~10-100x slower than double
-   - Benefit: ~128 decimal digits precision vs. ~15 digits
+3. **Precision/Speed**: QX≈33 digits, DQ≈64 digits, DD≈30 digits. Expect roughly 10–200× slower than `double`.
 
 ### Optimization Tips
 
 1. **Minimize conversions**: Avoid frequent `to_double()` calls
 2. **Vectorize operations**: Use Eigen3's vectorized operations when possible
-3. **Cache results**: Store intermediate QuadDouble results rather than recomputing
+3. **Cache results**: Store intermediate QXNumber results rather than recomputing
 
 ## Error Handling
 
 ### Common Issues
 
 1. **Conversion failures**: String parsing in `to_double()` may fail
-2. **Precision loss**: Converting QuadDouble → double loses precision
+2. **Precision loss**: Converting QXNumber → double loses precision
 3. **Memory alignment**: Fortran arrays must be properly aligned
 
 ### Debugging Tips
 
-1. **Print raw values**: Access `qd[0], qd[1], qd[2], qd[3]` directly
-2. **Check string output**: Use `operator<<` to see full precision
+1. **Check string output**: Use `operator<<` to see formatted values
 3. **Validate operations**: Compare with known mathematical results
 
 ## Build System Integration
@@ -306,8 +303,7 @@ Vec_QD result = A * x;  // Eigen3 uses our QuadDouble operators
 ### CMake Configuration
 
 ```cmake
-# Link Bailey libraries
-target_link_libraries(your_target PRIVATE qxwrap qxfun gfortran)
+target_link_libraries(your_target PRIVATE ddwrap ddfun dqwrap dqfun qxwrap qxfun gfortran)
 
 # Include directories
 target_include_directories(your_target PRIVATE ${QXFUN_DIR})
@@ -323,7 +319,7 @@ export DDFUN_DIR=/path/to/ddfun/fortran
 
 ## Conclusion
 
-この実装により、Bailey氏の高精度算術ライブラリをC++の自然な構文で使用できるようになります。演算子オーバーロードにより、通常のdouble型を使うのと同じ感覚で128桁精度の計算が可能になります。
+This implementation lets you use Bailey's high-precision arithmetic libraries with natural C++ syntax. Operator overloading keeps the ergonomics close to `double` while enabling ~30 digits (DD), ~33 digits (QX), and ~64 digits (DQ).
 
 **Key Benefits:**
 - Natural C++ syntax for high-precision arithmetic

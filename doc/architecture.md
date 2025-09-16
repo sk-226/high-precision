@@ -6,21 +6,21 @@ This document describes the system architecture and design decisions for the Bai
 
 ```
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   C++ Application   │    │  Fortran Wrappers   │    │  Bailey Libraries   │
+│ C++ Application │    │ Fortran Wrappers │    │ Bailey Libraries│
 │                 │    │                  │    │                 │
-│  ┌─────────────┐ │    │ ┌──────────────┐ │    │ ┌─────────────┐ │
-│  │ QuadDouble  │ │◄──►│ │ qxfun_cwrap  │ │◄──►│ │   QXFUN     │ │
-│  │   Struct    │ │    │ │              │ │    │ │ (qxmodule)  │ │
-│  └─────────────┘ │    │ └──────────────┘ │    │ └─────────────┘ │
+│ ┌─────────────┐ │    │ ┌──────────────┐ │    │ ┌─────────────┐ │
+│ │ Precision T │ │◄──►│ │ qxfun_cwrap  │ │◄──►│ │    QXFUN    │ │
+│ │   Struct    │ │    │ │              │ │    │ │ (qxmodule)  │ │
+│ └─────────────┘ │    │ └──────────────┘ │    │ └─────────────┘ │
 │                 │    │                  │    │                 │
-│  ┌─────────────┐ │    │ ┌──────────────┐ │    │ ┌─────────────┐ │
-│  │ Eigen3      │ │    │ │ dqfun_cwrap  │ │◄──►│ │   DQFUN     │ │
-│  │ Integration │ │    │ │              │ │    │ │ (dqmodule)  │ │
-│  └─────────────┘ │    │ └──────────────┘ │    │ └─────────────┘ │
+│ ┌─────────────┐ │    │ ┌──────────────┐ │    │ ┌─────────────┐ │
+│ │   Eigen3    │ │    │ │ dqfun_cwrap  │ │◄──►│ │    DQFUN    │ │
+│ │ Integration │ │    │ │              │ │    │ │ (dqmodule)  │ │
+│ └─────────────┘ │    │ └──────────────┘ │    │ └─────────────┘ │
 │                 │    │                  │    │                 │
-│  ┌─────────────┐ │    │ ┌──────────────┐ │    │ ┌─────────────┐ │
-│  │ CG Solver   │ │    │ │ ddfun_cwrap  │ │◄──►│ │   DDFUN     │ │
-│  └─────────────┘ │    │ │              │ │    │ │ (ddmodule)  │ │
+│ ┌─────────────┐ │    │ ┌──────────────┐ │    │ ┌─────────────┐ │
+│ │  CG Solver  │ │    │ │ ddfun_cwrap  │ │◄──►│ │    DDFUN    │ │
+│ └─────────────┘ │    │ │              │ │    │ │ (ddmodule)  │ │
 └─────────────────┘    │ └──────────────┘ │    │ └─────────────┘ │
                        └──────────────────┘    └─────────────────┘
 ```
@@ -32,9 +32,9 @@ This document describes the system architecture and design decisions for the Bai
 **Purpose**: Provides core high-precision arithmetic operations
 
 **Components**:
-- **DDFUN**: Double-double arithmetic using pairs of double-precision numbers
-- **DQFUN**: Quad-double arithmetic using pairs of quad-precision numbers  
-- **QXFUN**: Extended quad arithmetic using hardware quad-precision
+- **DDFUN (DD)**: double-double arithmetic using pairs of double-precision numbers
+- **DQFUN (DQ)**: double-quad arithmetic using pairs of quad-precision numbers (2×`real(dqknd)`)  
+- **QXFUN (QX)**: quad/extended arithmetic using a single `real(qxknd)` value
 
 **Data Structures**:
 ```fortran
@@ -78,14 +78,13 @@ end subroutine
 
 **Purpose**: Provides object-oriented C++ interface with operator overloading
 
-**Core Design**:
+**Core Design (actual types)**:
 ```cpp
-struct QuadDouble {
-    double qd[4] = {0.0, 0.0, 0.0, 0.0};  // QX internal representation
-    
-    QuadDouble() = default;
-    QuadDouble(double val);                 // Conversion constructor
-};
+namespace bailey {
+  struct DDNumber { double      dd[2];      };  // DDFUN
+  struct DQNumber { long double dq[2];      };  // DQFUN
+  struct QXNumber { long double qx;         };  // QXFUN
+}
 ```
 
 **Operator Overloading**:
@@ -97,25 +96,7 @@ struct QuadDouble {
 
 **Purpose**: Integrates high-precision arithmetic with Eigen3 sparse matrices
 
-**Eigen3 NumTraits Specialization**:
-```cpp
-namespace Eigen {
-    template<> struct NumTraits<QuadDouble> : GenericNumTraits<QuadDouble> {
-        typedef QuadDouble Real;
-        typedef QuadDouble NonInteger; 
-        typedef QuadDouble Nested;
-        enum { 
-            IsComplex = 0, 
-            IsInteger = 0, 
-            IsSigned = 1, 
-            RequireInitialization = 1,
-            ReadCost = 4,     // Cost relative to double
-            AddCost = 32, 
-            MulCost = 64 
-        };
-    };
-}
-```
+Each type has a matching `Eigen::NumTraits<>` specialization (see headers) enabling sparse/dense operations. Algorithms use `bailey::PrecisionTraits<T>` to select types at compile time.
 
 ## Data Flow
 
@@ -124,11 +105,11 @@ namespace Eigen {
 ```
 C++ Code: a + b
     ↓
-QuadDouble::operator+
+operator+(T)
     ↓
-qxadd_(a.qd, b.qd, result.qd)
+qxadd_/dqadd_/ddadd_
     ↓
-qxfun_cwrap.f90: qx_add
+Fortran C wrappers: `qxfun_cwrap`, `dqfun_cwrap`, `ddfun_cwrap`
     ↓
 Bailey QXFUN: native quad arithmetic
     ↓
@@ -142,9 +123,9 @@ Eigen3: y = A * x
     ↓
 Eigen3 SparseDenseProduct
     ↓
-QuadDouble arithmetic operations
+High-precision arithmetic operations
     ↓ (for each non-zero element)
-QuadDouble::operator* and operator+=
+operator* and operator+=
     ↓
 Bailey library calls
     ↓
@@ -153,27 +134,17 @@ High-precision computation
 
 ## Memory Layout
 
-### QuadDouble Memory Structure
+### Precision Memory Structures (conceptual)
 
-```
-QuadDouble object (32 bytes):
-┌────────────┬────────────┬────────────┬────────────┐
-│  qd[0]     │  qd[1]     │  qd[2]     │  qd[3]     │
-│  8 bytes   │  8 bytes   │  8 bytes   │  8 bytes   │
-└────────────┴────────────┴────────────┴────────────┘
-```
-
-For QXFUN, typically only `qd[0]` and `qd[1]` are used, but the full array ensures compatibility.
+- DD: 2×`double`
+- DQ: 2×`long double`
+- QX: 1×`long double`
 
 ### Sparse Matrix Memory Usage
 
 ```cpp
-SpMat_QD A(n, n);  // n×n sparse matrix
-
-// Memory per non-zero element:
-// - Value: 32 bytes (QuadDouble)
-// - Indices: 8 bytes (2 × int32)
-// Total: ~40 bytes per non-zero (vs ~12 bytes for double)
+// Example (arm64): value sizes — DD≈16 B, DQ≈32 B, QX≈16 B
+// Indices unchanged vs double. Sparse memory scales mainly with scalar size.
 ```
 
 ## Build System Architecture
@@ -196,43 +167,26 @@ endforeach()
 ### Linking Strategy
 
 ```
-sample_qx executable
-├── qxwrap.a        (Fortran C interface)
-├── qxfun.a         (Bailey QX library)
-├── gfortran        (Fortran runtime)
-└── Eigen3          (Header-only, no linking)
+cg_solver executable
+├── ddwrap.a dqwrap.a qxwrap.a
+├── ddfun.a dqfun.a qxfun.a
+├── gfortran (Fortran runtime)
+└── Eigen3 (header-only)
 ```
 
 ## Thread Safety Design
 
 ### Bailey Library Thread Safety
 
-- **Guarantee**: All Bailey libraries are 100% thread-safe
-- **Design**: No global state, all operations on local variables
-- **Implication**: Parallel algorithms can safely use QuadDouble arithmetic
+- Wrappers are stateless and operate on caller-provided values.
+- Use separate variables per thread; synchronize when sharing matrices/vectors.
+- We have no evidence of global mutable state in these paths; however, no formal thread-safety guarantee is made by this project.
 
 ### Eigen3 Integration Thread Safety
 
 - **Matrix Operations**: Thread-safe when operating on different matrices
 - **Shared Matrices**: Require external synchronization for write operations
 - **Read-Only Operations**: Multiple threads can safely read the same matrix
-
-### Implementation Considerations
-
-```cpp
-// Safe: Different threads, different matrices
-#pragma omp parallel for
-for (int i = 0; i < num_systems; ++i) {
-    conjugateGradient(A[i], b[i], x[i], max_iter, tol);
-}
-
-// Safe: Same matrix, read-only operations
-#pragma omp parallel for  
-for (int i = 0; i < n; ++i) {
-    Vec_QD col_i = A.col(i);  // Read-only access
-    process(col_i);
-}
-```
 
 ## Error Handling Strategy
 
@@ -273,19 +227,19 @@ if (A.rows() != A.cols()) {
 
 ### Computational Complexity
 
-| Operation | Double | QuadDouble | Ratio |
-|-----------|--------|------------|-------|
-| Add/Sub | O(1) | O(1) | ~10-50x |
-| Multiply | O(1) | O(1) | ~50-100x |
-| Divide | O(1) | O(1) | ~100-200x |
-| Matrix×Vector | O(nnz) | O(nnz) | ~50-100x |
+| Operation | Double | DD/DQ/QX | Ratio (rough) |
+|-----------|--------|-----------|---------------|
+| Add/Sub | O(1) | O(1) | 10–50× |
+| Multiply | O(1) | O(1) | 50–100× |
+| Divide | O(1) | O(1) | 100–200× |
+| Matrix×Vector | O(nnz) | O(nnz) | 50–100× |
 
 ### Memory Hierarchy Impact
 
 ```
 Cache Usage:
 - Double sparse matrix: ~12 bytes/element
-- QuadDouble sparse matrix: ~40 bytes/element
+- High-precision sparse matrix: scales with scalar size (arm64: DD≈20, QX≈20, DQ≈36 bytes/element incl. indices (32-bit index); rough)
 - Cache misses increase due to larger data structures
 - Algorithm complexity remains the same
 ```
