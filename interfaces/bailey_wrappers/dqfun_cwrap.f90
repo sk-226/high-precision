@@ -77,6 +77,17 @@ subroutine dq_sqrt(a,b) bind(C,name="dqsqrt_")
     b(2) = real(db%dqr(2), c_long_double)
 end subroutine
 
+subroutine dq_abs(a,b) bind(C,name="dqabs_")
+    real(c_long_double), intent(in)  :: a(2)
+    real(c_long_double), intent(out) :: b(2)
+    type(dq_real) :: da, db
+    da%dqr(1) = real(a(1), dqknd)
+    da%dqr(2) = real(a(2), dqknd)
+    call dqabs(da%dqr, db%dqr)
+    b(1) = real(db%dqr(1), c_long_double)
+    b(2) = real(db%dqr(2), c_long_double)
+end subroutine
+
 subroutine dq_tostr(a,nd,s,str_len) bind(C,name="dq_to_string")
     real(c_long_double), intent(in) :: a(2)
     integer(c_int), intent(in) :: nd

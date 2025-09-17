@@ -21,6 +21,7 @@ extern "C" {
     void qxdiv_(const long double* a, const long double* b, long double* c);      // c = a / b
     void qxdqd_(const double* d, long double* a);                                 // a = (double)d
     void qxsqrt_(const long double* a, long double* b);                           // b = sqrt(a)
+    void qxabs_(const long double* a, long double* b);                            // b = abs(a)
     void qx_to_string(const long double* a, int* n, char* c, int cl);
 }
 
@@ -143,7 +144,9 @@ inline QXNumber sqrt(const QXNumber& a) {
 }
 
 inline QXNumber abs(const QXNumber& a) {
-    return QXNumber(std::abs(a.qx));
+    QXNumber result;
+    qxabs_(a.get_qx_ptr(), result.get_qx_ptr());
+    return result;
 }
 
 // --- Type Conversion ---

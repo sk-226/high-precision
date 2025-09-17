@@ -63,6 +63,15 @@ subroutine dd_sqrt(a,b) bind(C,name="ddsqrt_")
     b = db%ddr
 end subroutine
 
+subroutine dd_abs(a,b) bind(C,name="ddabs_")
+    real(c_double), intent(in)  :: a(2)
+    real(c_double), intent(out) :: b(2)
+    type(dd_real) :: da, db
+    da%ddr = a
+    call ddabs(da%ddr, db%ddr)
+    b = db%ddr
+end subroutine
+
 subroutine dd_tostr(a,nd,s,str_len) bind(C,name="dd_to_string")
     real(c_double), intent(in) :: a(2)
     integer(c_int), intent(in) :: nd

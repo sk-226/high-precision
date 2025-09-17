@@ -14,6 +14,7 @@ extern "C" {
     void dddiv_(const double* a, const double* b, double* c);      // c = a / b
     void dddqd_(const double* d, double* a);                       // a = (double)d
     void ddsqrt_(const double* a, double* b);                      // b = sqrt(a)
+    void ddabs_(const double* a, double* b);                       // b = abs(a)
     void dd_to_string(const double* a, int* n, char* c, int cl);
 }
 
@@ -63,6 +64,10 @@ inline DDNumber& operator/=(DDNumber& a, const DDNumber& b) {
 // Mathematical Functions
 inline DDNumber sqrt(const DDNumber& a) { 
     DDNumber r; ddsqrt_(a.dd, r.dd); return r; 
+}
+
+inline DDNumber abs(const DDNumber& a) {
+    DDNumber r; ddabs_(a.dd, r.dd); return r;
 }
 
 // Type Conversion (avoid narrowing to double for precision-sensitive output)

@@ -14,6 +14,7 @@ extern "C" {
     void dqdiv_(const long double* a, const long double* b, long double* c);      // c = a / b
     void dqdqd_(const double* d, long double* a);                                  // a = (double)d
     void dqsqrt_(const long double* a, long double* b);                            // b = sqrt(a)
+    void dqabs_(const long double* a, long double* b);                             // b = abs(a)
     void dq_to_string(const long double* a, int* n, char* c, int cl);
 }
 
@@ -63,6 +64,10 @@ inline DQNumber& operator/=(DQNumber& a, const DQNumber& b) {
 // Mathematical Functions
 inline DQNumber sqrt(const DQNumber& a) { 
     DQNumber r; dqsqrt_(a.dq, r.dq); return r; 
+}
+
+inline DQNumber abs(const DQNumber& a) {
+    DQNumber r; dqabs_(a.dq, r.dq); return r;
 }
 
 // Type Conversion (avoid narrowing to double for precision-sensitive output)
