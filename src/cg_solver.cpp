@@ -9,8 +9,12 @@
 #endif
 #include "io/csv_exporter.hpp"
 
+#include <charconv>
+#include <system_error>
+#include <stdexcept>
 #include <iostream>
 #include <string>
+#include <string_view>
 #include <variant>
 #include <iomanip>
 #include <filesystem>
@@ -30,58 +34,103 @@ struct SolverConfig {
 // Command line parser
 SolverConfig parseCommandLine(int argc, char** argv) {
     SolverConfig config;
-    
-    for (int i = 1; i < argc; ++i) {
-        std::string arg = argv[i];
-        
-        if (arg == "--matrix" && i + 1 < argc) {
-            config.matrix_name = argv[++i];
+
+    // retireve the token value next to the --option flag
+    const auto next_token = [&argc, &argv](int& i) -> std::string_view {
+        if (++i >= argc) {
+            // i is incremented before the check, so we need to decrement it
+            throw std::runtime_error(
+                "Missing value after option: " + std::string(argv[i-1]) + " (try --help for usage)"
+            );
         }
-        else if (arg == "--precision" && i + 1 < argc) {
-            config.precision_level = argv[++i];
-            if (config.precision_level != "dd" && 
-                config.precision_level != "dq" && 
-                config.precision_level != "qx" &&
-                config.precision_level != "double") {
+        std::string_view token{argv[i]}; // get the token value
+        if (!token.empty() && token.front() == '-') {
+            throw std::runtime_error(
+                "Option " + std::string(argv[i-1]) + 
+                " requires a value, but got another flag: " + std::string(token)
+            );
+        }
+        return token;
+    };
+    
+    const auto parse_double_strict = [](std::string_view token) -> double {
+        double out{};
+        const char* first = token.data();
+        const char* last = first + token.size();
+        auto [ptr, error_code] = std::from_chars(first, last, out);
+        // check if the value is valid
+        if (error_code == std::errc{} && ptr == last) {
+            return out;
+        }
+        throw std::runtime_error(
+            "Invalid floating point value: " + std::string(token)
+        );
+    };
+
+    // if the token is integer, return the integer
+    // if not, return the double (goto the parse_double_strict function)
+    const auto parse_max_iter = [&parse_double_strict](std::string_view token) -> std::variant<int, double> {
+        int fixed_max_iter{};
+        const char* first = token.data();
+        const char* last = first + token.size();
+        auto [ptr, error_code] = std::from_chars(first, last, fixed_max_iter, 10);
+        if (error_code == std::errc{} && ptr == last) {
+            return fixed_max_iter;
+        }
+        // return the double value for coefficient (coefficient * matrix_size)
+        return parse_double_strict(token);
+    };
+
+    for (int i = 1; i < argc; ++i) {
+        std::string_view arg{argv[i]};
+        
+        if (arg == "--matrix") {
+            config.matrix_name = std::string(next_token(i));
+            continue;
+        }
+
+        if (arg == "--precision") {
+            config.precision_level = std::string(next_token(i));
+            std::string_view lvl{config.precision_level};
+            if (lvl != "dd" && lvl != "dq" && lvl != "qx" && lvl != "double") {
                 throw std::runtime_error("Invalid precision level. Use: dd, dq, qx, or double");
             }
+            continue;
         }
-        else if (arg == "--tol" && i + 1 < argc) {
-            try {
-                config.tolerance = std::stod(argv[++i]);
-            } catch (...) {
-                throw std::runtime_error("Invalid tolerance value");
-            }
+
+        if (arg == "--tol") {
+            config.tolerance = parse_double_strict(next_token(i));
+            continue;
         }
-        else if (arg == "--max-iter" && i + 1 < argc) {
-            std::string value = argv[++i];
-            try {
-                if (value.find('.') != std::string::npos) {
-                    config.max_iter = std::stod(value);
-                } else {
-                    config.max_iter = std::stoi(value);
-                }
-            } catch (...) {
-                throw std::runtime_error("Invalid max-iter value");
-            }
+
+        if (arg == "--max-iter") {
+            config.max_iter = parse_max_iter(next_token(i));
+            continue;
         }
-        else if (arg == "--input-dir" && i + 1 < argc) {
-            config.input_dir = argv[++i];
+
+        if (arg == "--input-dir") {
+            config.input_dir = std::string(next_token(i));
+            continue;
         }
-        else if (arg == "--export-mat" && i + 1 < argc) {
-            config.export_mat_file = argv[++i];
+
+        if (arg == "--export-mat") {
+            config.export_mat_file = std::string(next_token(i));
+            continue;
         }
-        else if (arg == "--export-csv" && i + 1 < argc) {
-            config.export_csv_file = argv[++i];
+
+        if (arg == "--export-csv") {
+            config.export_csv_file = std::string(next_token(i));
+            continue;
         }
-        else if (arg == "--help" || arg == "-h") {
-            throw std::runtime_error("help");  // Special case for help
+
+        if (arg == "--help" || arg == "-h") {
+            throw std::runtime_error("help");
         }
-        else {
-            throw std::runtime_error("Unknown argument: " + arg);
-        }
+
+        throw std::runtime_error("Unknown argument: " + std::string(arg) + " (try --help for usage)");
     }
     
+    // Matrix name MUST be specified
     if (config.matrix_name.empty()) {
         throw std::runtime_error("Matrix name is required (--matrix)");
     }
