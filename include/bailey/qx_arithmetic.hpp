@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <string>
+#include <string_view>
 #include <cmath>
 #include <iomanip>
 #include <cstring>
@@ -23,6 +24,8 @@ extern "C" {
     void qxsqrt_(const long double* a, long double* b);                           // b = sqrt(a)
     void qxabs_(const long double* a, long double* b);                            // b = abs(a)
     void qx_to_string(const long double* a, int* n, char* c, int cl);
+    void qxfromstr_(const char* s, int len, long double* a);                      // a = parse(s)
+    void qx_read_line(const char* s, int len, long double* a);                    // parse via qxread
 }
 
 namespace bailey {

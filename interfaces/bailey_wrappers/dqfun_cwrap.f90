@@ -1,6 +1,7 @@
 module dqfun_cwrap
     use iso_c_binding
     use dqmodule
+    use dqfuna, only: dqinpc, dqcpr
     implicit none
 contains
 
@@ -83,9 +84,23 @@ subroutine dq_abs(a,b) bind(C,name="dqabs_")
     type(dq_real) :: da, db
     da%dqr(1) = real(a(1), dqknd)
     da%dqr(2) = real(a(2), dqknd)
-    call dqabs(da%dqr, db%dqr)
+    db = abs(da)
     b(1) = real(db%dqr(1), c_long_double)
     b(2) = real(db%dqr(2), c_long_double)
+end subroutine
+
+subroutine dq_compare(a,b,ic) bind(C,name="dqcpr_")
+    real(c_long_double), intent(in)  :: a(2), b(2)
+    integer(c_int), intent(out) :: ic
+    type(dq_real) :: da, db
+    integer :: ic_local
+
+    da%dqr(1) = real(a(1), dqknd)
+    da%dqr(2) = real(a(2), dqknd)
+    db%dqr(1) = real(b(1), dqknd)
+    db%dqr(2) = real(b(2), dqknd)
+    call dqcpr(da%dqr, db%dqr, ic_local)
+    ic = ic_local
 end subroutine
 
 subroutine dq_tostr(a,nd,s,str_len) bind(C,name="dq_to_string")
@@ -112,5 +127,58 @@ subroutine dq_tostr(a,nd,s,str_len) bind(C,name="dq_to_string")
     end do
     s(c_len+1) = c_null_char
 end subroutine
+
+subroutine dq_fromstr(str, strlen, a) bind(C,name="dqfromstr_")
+    character(c_char), intent(in) :: str(*)
+    integer(c_int), value :: strlen
+    real(c_long_double), intent(out) :: a(2)
+
+    type(dq_real) :: tmp
+    character(len=512) :: buffer
+
+    call copy_c_string(str, strlen, buffer)
+    call dqinpc(buffer, tmp%dqr)
+    a(1) = real(tmp%dqr(1), c_long_double)
+    a(2) = real(tmp%dqr(2), c_long_double)
+end subroutine
+
+subroutine dq_read_line(str, strlen, value) bind(C,name="dq_read_line")
+    character(c_char), intent(in) :: str(*)
+    integer(c_int), value :: strlen
+    real(c_long_double), intent(out) :: value(2)
+
+    type(dq_real) :: tmp
+    character(len=512) :: buffer
+    integer :: unit, ios
+
+    call copy_c_string(str, strlen, buffer)
+    open(newunit=unit, status='scratch', action='readwrite', form='formatted', iostat=ios)
+    if (ios /= 0) then
+        value = 0.0_c_long_double
+        return
+    end if
+
+    write(unit, '(a)') trim(buffer)
+    rewind(unit)
+    call dqread(unit, tmp)
+    close(unit)
+
+    value(1) = real(tmp%dqr(1), c_long_double)
+    value(2) = real(tmp%dqr(2), c_long_double)
+end subroutine
+
+subroutine copy_c_string(str, strlen, buffer)
+    character(c_char), intent(in) :: str(*)
+    integer(c_int), value :: strlen
+    character(*), intent(out) :: buffer
+    integer :: i, copy_len
+
+    buffer = ' '
+    copy_len = min(strlen, len(buffer))
+    do i = 1, copy_len
+        if (str(i) == c_null_char) exit
+        buffer(i:i) = str(i)
+    end do
+end subroutine copy_c_string
 
 end module

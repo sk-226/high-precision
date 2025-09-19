@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <string>
+#include <string_view>
 #include <cstring>
 #include <cmath>
 #include <Eigen/Sparse>
@@ -16,6 +17,9 @@ extern "C" {
     void dqsqrt_(const long double* a, long double* b);                            // b = sqrt(a)
     void dqabs_(const long double* a, long double* b);                             // b = abs(a)
     void dq_to_string(const long double* a, int* n, char* c, int cl);
+    void dqfromstr_(const char* s, int len, long double* a);                       // a = parse(s)
+    void dqcpr_(const long double* a, const long double* b, int* ic);              // compare(a,b)
+    void dq_read_line(const char* s, int len, long double* a);                     // parse via dqread
 }
 
 namespace bailey {
@@ -70,7 +74,38 @@ inline DQNumber abs(const DQNumber& a) {
     DQNumber r; dqabs_(a.dq, r.dq); return r;
 }
 
-// Type Conversion (avoid narrowing to double for precision-sensitive output)
+// Comparison helpers using Bailey routines
+inline int compare(const DQNumber& a, const DQNumber& b) {
+    int ic = 0;
+    dqcpr_(a.dq, b.dq, &ic);
+    return ic;
+}
+
+inline bool operator==(const DQNumber& a, const DQNumber& b) {
+    return compare(a, b) == 0;
+}
+
+inline bool operator!=(const DQNumber& a, const DQNumber& b) {
+    return compare(a, b) != 0;
+}
+
+inline bool operator<(const DQNumber& a, const DQNumber& b) {
+    return compare(a, b) < 0;
+}
+
+inline bool operator<=(const DQNumber& a, const DQNumber& b) {
+    return compare(a, b) <= 0;
+}
+
+inline bool operator>(const DQNumber& a, const DQNumber& b) {
+    return compare(a, b) > 0;
+}
+
+inline bool operator>=(const DQNumber& a, const DQNumber& b) {
+    return compare(a, b) >= 0;
+}
+
+// Type Conversion
 inline std::string to_string(const DQNumber& a, int digits=64) {
     char s[128] = {0};
     dq_to_string(a.dq, &digits, s, sizeof(s));

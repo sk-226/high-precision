@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <string>
+#include <string_view>
 #include <cstring>
 #include <cmath>
 #include <Eigen/Sparse>
@@ -16,6 +17,9 @@ extern "C" {
     void ddsqrt_(const double* a, double* b);                      // b = sqrt(a)
     void ddabs_(const double* a, double* b);                       // b = abs(a)
     void dd_to_string(const double* a, int* n, char* c, int cl);
+    void ddfromstr_(const char* s, int len, double* a);            // a = parse(s)
+    void ddcpr_(const double* a, const double* b, int* ic);        // compare(a,b)
+    void dd_read_line(const char* s, int len, double* a);          // parse via ddread
 }
 
 namespace bailey {
@@ -70,7 +74,38 @@ inline DDNumber abs(const DDNumber& a) {
     DDNumber r; ddabs_(a.dd, r.dd); return r;
 }
 
-// Type Conversion (avoid narrowing to double for precision-sensitive output)
+// Comparison helpers (exact ordering using Bailey routines)
+inline int compare(const DDNumber& a, const DDNumber& b) {
+    int ic = 0;
+    ddcpr_(a.dd, b.dd, &ic);
+    return ic;
+}
+
+inline bool operator==(const DDNumber& a, const DDNumber& b) {
+    return compare(a, b) == 0;
+}
+
+inline bool operator!=(const DDNumber& a, const DDNumber& b) {
+    return compare(a, b) != 0;
+}
+
+inline bool operator<(const DDNumber& a, const DDNumber& b) {
+    return compare(a, b) < 0;
+}
+
+inline bool operator<=(const DDNumber& a, const DDNumber& b) {
+    return compare(a, b) <= 0;
+}
+
+inline bool operator>(const DDNumber& a, const DDNumber& b) {
+    return compare(a, b) > 0;
+}
+
+inline bool operator>=(const DDNumber& a, const DDNumber& b) {
+    return compare(a, b) >= 0;
+}
+
+// Type Conversion 
 inline std::string to_string(const DDNumber& a, int digits=32) {
     char s[80] = {0};
     dd_to_string(a.dd, &digits, s, sizeof(s));

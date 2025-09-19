@@ -91,3 +91,32 @@ using DoubleTraits = PrecisionTraits<double>;
 inline double to_double(const double& a) {
     return a;
 }
+
+namespace bailey {
+
+// 共通 from_string テンプレートと特殊化
+template <typename T>
+inline T from_string(std::string_view text);
+
+template <>
+inline DDNumber from_string<DDNumber>(std::string_view text) {
+    DDNumber r;
+    dd_read_line(text.data(), static_cast<int>(text.size()), r.dd);
+    return r;
+}
+
+template <>
+inline DQNumber from_string<DQNumber>(std::string_view text) {
+    DQNumber r;
+    dq_read_line(text.data(), static_cast<int>(text.size()), r.dq);
+    return r;
+}
+
+template <>
+inline QXNumber from_string<QXNumber>(std::string_view text) {
+    QXNumber r;
+    qx_read_line(text.data(), static_cast<int>(text.size()), r.get_qx_ptr());
+    return r;
+}
+
+} // namespace bailey
