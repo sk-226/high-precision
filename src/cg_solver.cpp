@@ -28,7 +28,7 @@ struct SolverConfig {
 };
 
 // Command line parser
-SolverConfig parseCommandLine(int argc, char* argv[]) {
+SolverConfig parseCommandLine(int argc, char** argv) {
     SolverConfig config;
     
     for (int i = 1; i < argc; ++i) {
@@ -149,13 +149,13 @@ int solveCG(const SolverConfig& config) {
     // CHECK: Download the matrix with https://github.com/sk-226/ssdownload
     std::filesystem::path matrix_dir = std::filesystem::path(config.input_dir) / config.matrix_name;
     std::filesystem::path matrix_path = matrix_dir / (matrix_dir.filename().string() + ".mtx");
-    std::cout << "Loading matrix: " << matrix_path.string() << " (precision: " << Traits::name() << ")" << std::endl;
+    std::cout << "Loading matrix: " << matrix_path.string() << " (precision: " << Traits::name() << ")" << '\n';
     
     MatrixType A = io::loadMatrixMarket<T>(matrix_path);
     int n = A.rows();
     
-    std::cout << "Matrix size: " << n << " x " << A.cols() << std::endl;
-    std::cout << "Non-zeros: " << A.nonZeros() << std::endl;
+    std::cout << "Matrix size: " << n << " x " << A.cols() << '\n';
+    std::cout << "Non-zeros: " << A.nonZeros() << '\n';
     
     // Calculate max iterations
     int max_iterations = algorithms::resolve_max_iterations(config.max_iter, n);
@@ -236,19 +236,21 @@ int solveCG(const SolverConfig& config) {
 int runSolver(const SolverConfig& config) {
     if (config.precision_level == "dd") {
         return solveCG<bailey::DDNumber>(config);
-    } else if (config.precision_level == "dq") {
-        return solveCG<bailey::DQNumber>(config);
-    } else if (config.precision_level == "qx") {
-        return solveCG<bailey::QXNumber>(config);
-    } else if (config.precision_level == "double") {
-        return solveCG<double>(config);
-    } else {
-        std::cerr << "Invalid precision level: " << config.precision_level << '\n';
-        return 1;
     }
+    if (config.precision_level == "dq") {
+        return solveCG<bailey::DQNumber>(config);
+    }
+    if (config.precision_level == "qx") {
+        return solveCG<bailey::QXNumber>(config);
+    }
+    if (config.precision_level == "double") {
+        return solveCG<double>(config);
+    }
+    std::cerr << "Invalid precision level: " << config.precision_level << '\n';
+    return 1;
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char** argv) {
     try {
         SolverConfig config = parseCommandLine(argc, argv);
         return runSolver(config);
