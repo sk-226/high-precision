@@ -109,7 +109,7 @@ std::string resolveExportPath(const std::string& filename) {
     try {
         std::filesystem::create_directories(outputs_dir);
     } catch (const std::exception& e) {
-        std::cerr << "Warning: Could not create outputs directory: " << e.what() << std::endl;
+        std::cerr << "Warning: Could not create outputs directory: " << e.what() << '\n';
         return filename; // Fall back to current directory
     }
     
@@ -160,8 +160,8 @@ int solveCG(const SolverConfig& config) {
     // Calculate max iterations
     int max_iterations = algorithms::resolve_max_iterations(config.max_iter, n);
     
-    std::cout << "Max iterations: " << max_iterations << std::endl;
-    std::cout << std::scientific << std::setprecision(2) << "Tolerance: " << config.tolerance << std::endl;
+    std::cout << "Max iterations: " << max_iterations << '\n';
+    std::cout << std::scientific << std::setprecision(2) << "Tolerance: " << config.tolerance << '\n';
     
     // Set up problem: Ax = b where x_true = ones(n)
     VectorType x_true = VectorType::Ones(n);
@@ -179,7 +179,7 @@ int solveCG(const SolverConfig& config) {
     if (!config.export_mat_file.empty()) {
 #ifdef ENABLE_MAT_EXPORT
         std::string export_path = resolveExportPath(config.export_mat_file);
-        std::cout << "\nExporting convergence data to " << export_path << "..." << std::endl;
+        std::cout << "\nExporting convergence data to " << export_path << "..." << '\n';
         bool export_success = io::MatExporter::export_convergence_data(
             result, 
             export_path, 
@@ -187,12 +187,12 @@ int solveCG(const SolverConfig& config) {
             config.precision_level
         );
         if (export_success) {
-            std::cout << "Export successful." << std::endl;
+            std::cout << "Export successful." << '\n';
         } else {
-            std::cerr << "Warning: Export failed." << std::endl;
+            std::cerr << "Warning: Export failed." << '\n';
         }
 #else
-        std::cerr << "Warning: MATLAB export not available - built without matio-cpp support." << std::endl;
+        std::cerr << "Warning: MATLAB export not available - built without matio-cpp support." << '\n';
 #endif
     }
     
@@ -223,9 +223,9 @@ int solveCG(const SolverConfig& config) {
             result.converged ? std::string("reached_tol") : std::string("max_iterations")
         );
         if (csv_ok) {
-            std::cout << "Appended results to " << csv_path << std::endl;
+            std::cout << "Appended results to " << csv_path << '\n';
         } else {
-            std::cerr << "Warning: Failed to append CSV results to " << csv_path << std::endl;
+            std::cerr << "Warning: Failed to append CSV results to " << csv_path << '\n';
         }
     }
     
@@ -243,7 +243,7 @@ int runSolver(const SolverConfig& config) {
     } else if (config.precision_level == "double") {
         return solveCG<double>(config);
     } else {
-        std::cerr << "Invalid precision level: " << config.precision_level << std::endl;
+        std::cerr << "Invalid precision level: " << config.precision_level << '\n';
         return 1;
     }
 }
@@ -258,7 +258,7 @@ int main(int argc, char* argv[]) {
             printUsage(argv[0]);
             return 0;
         }
-        std::cerr << "Error: " << error_msg << std::endl;
+        std::cerr << "Error: " << error_msg << '\n';
         if (error_msg.find("argument") != std::string::npos || error_msg.find("required") != std::string::npos) {
             printUsage(argv[0]);
         }
