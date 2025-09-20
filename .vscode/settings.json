@@ -1,0 +1,17 @@
+{
+  "editor.formatOnSave": true,
+  "clangd.arguments": [
+    "--compile-commands-dir=/work/build"
+  ],
+  "fortran.fortls.path": "fortls",
+  "fortran.linter.includePaths": [
+    "/work/src",
+    "/work/include",
+    "/work/interfaces/bailey_wrappers",
+    "${env:DQFUN_DIR}",
+    "${env:QXFUN_DIR}",
+    "${env:DDFUN_DIR}"
+  ],
+  "fortran.linter.compiler": "gfortran",
+  "fortran.formatting.formatter": "fprettify",
+}
