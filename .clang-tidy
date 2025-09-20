@@ -1,0 +1,17 @@
+Checks: >
+  clang-diagnostic-*,
+  clang-analyzer-*,
+  bugprone-*,
+  google-*,
+  modernize-*,
+  performance-*,
+  readability-*,
+  -readability-identifier-length,
+  -modernize-use-trailing-return-type,
+  -modernize-use-auto,
+  -readability-magic-numbers,
+  -google-runtime-references,
+  -google-build-using-namespace
+WarningsAsErrors: ''
+HeaderFilterRegex: '^(src|include|tests/(?!ddfun/|dqfun/|qxfun/)).*'
+FormatStyle: google

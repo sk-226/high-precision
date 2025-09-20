@@ -1,0 +1,4 @@
+-std=c++20
+-I/work/include
+-I/work/lib/fast_matrix_market/include
+-isystem=/usr/include/eigen3
