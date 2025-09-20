@@ -27,14 +27,14 @@ inputs/*
 # Generated solver outputs and logs
 outputs/
 
-# Fortran reference suites keep sources but drop compiled artifacts
-tests/**/fortran/*.o
-tests/**/fortran/*.mod
-
 # Extensionless binaries under tests (e.g., debug executables)
 tests/**/[^/]*
 !tests/**/
 !tests/**/*.*
+
+# Fortran reference suites keep sources but drop compiled artifacts
+tests/**/fortran/*.o
+tests/**/fortran/*.mod
 
 # Executables with .exe suffix (cross-platform safety)
 **/*.exe
