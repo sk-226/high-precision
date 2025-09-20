@@ -16,9 +16,9 @@ tmp/
 # Editor / tooling caches (VS Code, clangd, etc.)
 .cache/
 .ccls-cache/
-cpptools/
-cpptools-srv/
-cpptools-wordexp/
+cpptools
+cpptools-srv
+cpptools-wordexp
 
 # External input matrices are user-supplied; keep placeholder only
 inputs/*
