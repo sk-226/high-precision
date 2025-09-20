@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.21)
 project(bailey_hp LANGUAGES C CXX Fortran)
 
+enable_testing()
+
 # Always emit compile_commands.json for editors/LSP (clangd)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "Generate compile_commands.json for LSPs" FORCE)
 
@@ -90,22 +92,22 @@ if(MAT_EXPORT_AVAILABLE)
 endif()
 
 # メインデモプログラム
-add_executable(sample_qx src/experiments/main.cpp)
-target_include_directories(sample_qx PRIVATE ${COMMON_INCLUDE_DIRS})
-target_link_libraries(sample_qx PRIVATE ${MATRIX_MARKET_LIBRARIES})
-target_compile_features(sample_qx PRIVATE cxx_std_17)
+# add_executable(sample_qx src/experiments/main.cpp)
+# target_include_directories(sample_qx PRIVATE ${COMMON_INCLUDE_DIRS})
+# target_link_libraries(sample_qx PRIVATE ${MATRIX_MARKET_LIBRARIES})
+# target_compile_features(sample_qx PRIVATE cxx_std_17)
 
-# nos7 CG実験プログラム
-add_executable(nos7_cg src/experiments/nos7_cg.cpp)
-target_include_directories(nos7_cg PRIVATE ${COMMON_INCLUDE_DIRS})
-target_link_libraries(nos7_cg PRIVATE ${MATRIX_MARKET_LIBRARIES})
-target_compile_features(nos7_cg PRIVATE cxx_std_17)
+# # nos7 CG実験プログラム
+# add_executable(nos7_cg src/experiments/nos7_cg.cpp)
+# target_include_directories(nos7_cg PRIVATE ${COMMON_INCLUDE_DIRS})
+# target_link_libraries(nos7_cg PRIVATE ${MATRIX_MARKET_LIBRARIES})
+# target_compile_features(nos7_cg PRIVATE cxx_std_17)
 
-# nos5 CG実験プログラム
-add_executable(nos5_cg src/experiments/nos5_cg.cpp)
-target_include_directories(nos5_cg PRIVATE ${COMMON_INCLUDE_DIRS})
-target_link_libraries(nos5_cg PRIVATE ${MATRIX_MARKET_LIBRARIES})
-target_compile_features(nos5_cg PRIVATE cxx_std_17)
+# # nos5 CG実験プログラム
+# add_executable(nos5_cg src/experiments/nos5_cg.cpp)
+# target_include_directories(nos5_cg PRIVATE ${COMMON_INCLUDE_DIRS})
+# target_link_libraries(nos5_cg PRIVATE ${MATRIX_MARKET_LIBRARIES})
+# target_compile_features(nos5_cg PRIVATE cxx_std_17)
 
 # ---------- テスト・ベンチマークプログラム -----------------------------------
 
@@ -133,6 +135,25 @@ add_executable(prec_sanity src/prec_sanity.cpp)
 target_include_directories(prec_sanity PRIVATE ${COMMON_INCLUDE_DIRS})
 target_link_libraries(prec_sanity PRIVATE ${COMMON_LIBRARIES})
 target_compile_features(prec_sanity PRIVATE cxx_std_17)
+
+# Scalar precision regression test (DD/DQ/QX)
+add_executable(scalar_precision_test tests/scalar_precision_test.cpp)
+target_include_directories(scalar_precision_test PRIVATE ${COMMON_INCLUDE_DIRS})
+target_link_libraries(scalar_precision_test PRIVATE ${COMMON_LIBRARIES})
+target_compile_features(scalar_precision_test PRIVATE cxx_std_17)
+add_test(NAME scalar_precision_test COMMAND scalar_precision_test)
+
+# Matrix Market loader smoke test (prints matrix in multiple precisions)
+add_executable(matrix_loader_test tests/matrix_loader_test.cpp)
+target_include_directories(matrix_loader_test PRIVATE ${COMMON_INCLUDE_DIRS})
+target_link_libraries(matrix_loader_test PRIVATE ${COMMON_LIBRARIES})
+target_compile_features(matrix_loader_test PRIVATE cxx_std_17)
+
+# Eigen-based high-precision arithmetic checks
+# add_executable(eigen_precision_test tests/eigen_precision_test.cpp)
+# target_include_directories(eigen_precision_test PRIVATE ${COMMON_INCLUDE_DIRS})
+# target_link_libraries(eigen_precision_test PRIVATE ${COMMON_LIBRARIES})
+# target_compile_features(eigen_precision_test PRIVATE cxx_std_17)
 
 # ---------- Fortran 検証プログラム -------------------------------------------
 # DQ: eps と (sqrt(2))^2-2
