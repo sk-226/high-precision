@@ -298,6 +298,23 @@ cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 ln -s build/compile_commands.json .
 ```
 
+#### Issue: `clangd: Unknown command line argument '--cppStandard=...'`
+
+> [!TIP]
+> Open **Output → clangd** in VS Code to inspect the LSP logs and confirm which flags were passed to clangd.
+
+**Cause**: An unsupported option is listed in `clangd.arguments`.
+
+**Solution**:
+```json
+{
+  "clangd.arguments": [
+    "--compile-commands-dir=/work/build"
+  ]
+}
+```
+Keep only the compile commands directory override and let `compile_commands.json` provide the language standard. Restart clangd after editing the settings.
+
 #### Issue: `Fortran syntax highlighting missing`
 
 **Solution**: Install Fortran language support in your editor.
