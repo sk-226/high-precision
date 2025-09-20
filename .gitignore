@@ -12,3 +12,4 @@ tests/**/fortran/*
 !tests/**/fortran/*.scr
 tmp/
 compile_commands.json
+**/*.exe
