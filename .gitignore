@@ -23,6 +23,8 @@ cpptools-wordexp
 # External input matrices are user-supplied; keep placeholder only
 inputs/*
 !inputs/.gitkeep
+!inputs/test/
+!inputs/test/**
 
 # Generated solver outputs and logs
 outputs/
