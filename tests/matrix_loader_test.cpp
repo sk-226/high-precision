@@ -48,9 +48,8 @@ void print_sparse_summary(const SparseMatrix& matrix, std::string_view label,
 
 int main() {
     const std::filesystem::path root = project_root();
-    const std::filesystem::path matrix_dir =
-        root / "inputs" / "test" / "test1";
-    const std::filesystem::path matrix_path = matrix_dir / "test1.mtx";
+    const std::filesystem::path matrix_path =
+        root / "inputs" / "test" / "test1" / "test1.mtx";
 
     using DoubleMatrix = bailey::PrecisionTraits<double>::matrix_type;
     using DDMatrix = bailey::PrecisionTraits<bailey::DDNumber>::matrix_type;
