@@ -1,0 +1,18 @@
+{
+  "dockerComposeFile": [
+    "../compose.yaml"
+  ],
+  "service": "dev",
+  "workspaceFolder": "/work",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "anysphere.cpptools",
+        // "fortran-lang.linter-gfortran",
+        "openai.chatgpt",
+        "edwinhuish.better-comments-next",
+        "gruntfuggly.todo-tree"
+      ]
+    }
+  }
+}
