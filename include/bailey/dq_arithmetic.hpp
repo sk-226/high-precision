@@ -140,8 +140,8 @@ namespace Eigen {
         using Real = bailey::DQNumber; 
         using NonInteger = bailey::DQNumber; 
         using Nested = bailey::DQNumber;
-        static inline int digits10() { return 64; }
-        static inline int digits() { return 212; }
+        static int digits10() { return 64; }
+        static int digits() { return 212; }
         enum { 
             IsComplex = 0, 
             IsInteger = 0, 

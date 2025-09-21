@@ -144,8 +144,8 @@ namespace Eigen {
         // Bailey's docs describe "about 30 digits" to stay conservative;
         // we report 31 here to match Eigen's digits10 semantics.
 
-        static inline int digits10() { return 31; }
-        static inline int digits() { return 106; }
+        static int digits10() { return 31; }
+        static int digits() { return 106; }
         enum { 
             IsComplex = 0, 
             IsInteger = 0, 

@@ -187,8 +187,8 @@ namespace Eigen {
         using Real = bailey::QXNumber; 
         using NonInteger = bailey::QXNumber; 
         using Nested = bailey::QXNumber;
-        static inline int digits10() { return 33; }
-        static inline int digits() { return 113; }
+        static int digits10() { return 33; }
+        static int digits() { return 113; }
         enum { 
             IsComplex = 0, 
             IsInteger = 0, 
