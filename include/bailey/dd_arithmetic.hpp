@@ -137,9 +137,15 @@ inline std::ostream& operator<<(std::ostream& os, const DDNumber& d) {
 // Eigen Integration
 namespace Eigen {
     template<> struct NumTraits<bailey::DDNumber> : GenericNumTraits<bailey::DDNumber> {
-        typedef bailey::DDNumber Real; 
-        typedef bailey::DDNumber NonInteger; 
-        typedef bailey::DDNumber Nested;
+        using Real = bailey::DDNumber; 
+        using NonInteger = bailey::DDNumber; 
+        using Nested = bailey::DDNumber;
+        // Notes: the DD mantissa holds ~106 bits (~31.9 decimal digits).
+        // Bailey's docs describe "about 30 digits" to stay conservative;
+        // we report 31 here to match Eigen's digits10 semantics.
+
+        static inline int digits10() { return 31; }
+        static inline int digits() { return 106; }
         enum { 
             IsComplex = 0, 
             IsInteger = 0, 
@@ -150,4 +156,4 @@ namespace Eigen {
             MulCost = 32 
         };
     };
-}
+} // namespace Eigen

@@ -137,9 +137,11 @@ inline std::ostream& operator<<(std::ostream& os, const DQNumber& dq) {
 // Eigen Integration
 namespace Eigen {
     template<> struct NumTraits<bailey::DQNumber> : GenericNumTraits<bailey::DQNumber> {
-        typedef bailey::DQNumber Real; 
-        typedef bailey::DQNumber NonInteger; 
-        typedef bailey::DQNumber Nested;
+        using Real = bailey::DQNumber; 
+        using NonInteger = bailey::DQNumber; 
+        using Nested = bailey::DQNumber;
+        static inline int digits10() { return 64; }
+        static inline int digits() { return 212; }
         enum { 
             IsComplex = 0, 
             IsInteger = 0, 

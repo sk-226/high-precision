@@ -184,9 +184,11 @@ inline std::ostream& operator<<(std::ostream& os, const QXNumber& q) {
 // --- Eigen Integration ---
 namespace Eigen {
     template<> struct NumTraits<bailey::QXNumber> : GenericNumTraits<bailey::QXNumber> {
-        typedef bailey::QXNumber Real; 
-        typedef bailey::QXNumber NonInteger; 
-        typedef bailey::QXNumber Nested;
+        using Real = bailey::QXNumber; 
+        using NonInteger = bailey::QXNumber; 
+        using Nested = bailey::QXNumber;
+        static inline int digits10() { return 33; }
+        static inline int digits() { return 113; }
         enum { 
             IsComplex = 0, 
             IsInteger = 0, 
@@ -197,7 +199,7 @@ namespace Eigen {
             MulCost = 16       // Estimated cost for QX operations
         };
     };
-}
+} // namespace Eigen
 
 // --- Type Aliases ---
 using SpMat_QX = Eigen::SparseMatrix<bailey::QXNumber>;
