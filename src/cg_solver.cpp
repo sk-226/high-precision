@@ -145,24 +145,25 @@ std::string resolveExportPath(const std::string& filename) {
         return filename;
     }
     
-    // If filename contains path separator or starts with '.', use as-is
-    if (filename.find('/') != std::string::npos || filename.find('\\') != std::string::npos || 
-        filename.starts_with("./") || filename.starts_with("../")) {
-        return filename;
+    std::filesystem::path export_path{filename};
+
+    // For bare filenames, place them under outputs/
+    if (!export_path.is_absolute() && !export_path.has_parent_path()) {
+        export_path = std::filesystem::path("outputs") / export_path;
     }
-    
-    // Otherwise, place in outputs directory
-    std::filesystem::path outputs_dir = "outputs";
-    
-    // Create outputs directory if it doesn't exist
+
     try {
-        std::filesystem::create_directories(outputs_dir);
+        const std::filesystem::path parent = export_path.parent_path();
+        if (!parent.empty()) {
+            std::filesystem::create_directories(parent);
+        }
     } catch (const std::exception& e) {
-        std::cerr << "Warning: Could not create outputs directory: " << e.what() << '\n';
-        return filename; // Fall back to current directory
+        std::cerr << "Warning: Could not create directory for export path '"
+                  << export_path.string() << "': " << e.what() << '\n';
+        return filename; // Fall back to caller-provided path
     }
-    
-    return (outputs_dir / filename).string();
+
+    return export_path.string();
 }
 
 void printUsage(const char* program_name) {
