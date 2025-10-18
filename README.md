@@ -202,7 +202,7 @@ Input matrices should be in Matrix Market coordinate format (`.mtx`):
 - **Double precision**: Fastest execution, ~15 digit accuracy
 - **DD precision**: ~2-5x slower than double, ~30 digit accuracy  
 - **QX precision**: ~5-10x slower than double, ~33 digit accuracy
-- **DQ precision**: ~10-20x slower than double, ~64 digit accuracy
+- **DQ precision**: ~10-20x slower than double, ~66 digit accuracy
 
 Higher precision levels may converge in fewer iterations due to reduced round-off error accumulation.
 
