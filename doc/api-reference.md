@@ -7,8 +7,8 @@ This document describes the public C++ API used by the solver and examples. The 
 
 ## Precision Types
 
-- `bailey::DDNumber` — DDFUN, 2×`double`, ~32 digits
-- `bailey::DQNumber` — DQFUN, 2×`long double`, ~64 digits
+- `bailey::DDNumber` — DDFUN, 2×`double`, ~30 digits
+- `bailey::DQNumber` — DQFUN, 2×`long double`, ~66 digits
 - `bailey::QXNumber` — QXFUN, scalar `long double`, ~33 digits
 
 Common functions are provided for all three types via free functions and operators.
@@ -37,7 +37,7 @@ a *= b;
 auto r = sqrt(a);
 
 // to_string / to_double utilities
-std::string s = to_string(a);         // digits default: DD=32, DQ=64, QX=33
+std::string s = to_string(a);         // digits default: DD=32 (~30-digit accuracy), DQ=66, QX=33
 double d = to_double(a);              // best-effort conversion for logging
 ```
 

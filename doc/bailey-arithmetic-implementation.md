@@ -277,7 +277,7 @@ Vec_QX result = A * x;  // Eigen3 uses our QXNumber operators
    - Standard double: sizeof(double)
    - Overhead depends on platform (e.g., binary128 vs x86 extended)
 
-3. **Precision/Speed**: QX≈33 digits, DQ≈64 digits, DD≈30 digits. Expect roughly 10–200× slower than `double`.
+3. **Precision/Speed**: QX≈33 digits, DQ≈66 digits, DD≈30 digits. Expect roughly 10–200× slower than `double`.
 
 ### Optimization Tips
 
@@ -319,7 +319,7 @@ export DDFUN_DIR=/path/to/ddfun/fortran
 
 ## Conclusion
 
-This implementation lets you use Bailey's high-precision arithmetic libraries with natural C++ syntax. Operator overloading keeps the ergonomics close to `double` while enabling ~30 digits (DD), ~33 digits (QX), and ~64 digits (DQ).
+This implementation lets you use Bailey's high-precision arithmetic libraries with natural C++ syntax. Operator overloading keeps the ergonomics close to `double` while enabling ~30 digits (DD), ~33 digits (QX), and ~66 digits (DQ).
 
 **Key Benefits:**
 - Natural C++ syntax for high-precision arithmetic

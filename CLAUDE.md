@@ -29,7 +29,7 @@ cmake --build build --config Release
 ./build/nos7_cg
 
 # Test basic arithmetic functionality
-./build/test_basic
+./build/tests/test_basic
 
 # Sample programs
 ./build/sample_qx
@@ -60,7 +60,7 @@ The Dockerfile automatically downloads and builds Bailey's DD/DQ/QX libraries fr
 
 1. **Bailey Library Integration** (`interfaces/bailey_wrappers/`): Fortran wrapper modules that expose Bailey's high-precision arithmetic to C++
    - `ddfun_cwrap.f90`: Double-double precision wrapper (~30 digits)
-   - `dqfun_cwrap.f90`: Quad-double precision wrapper (~64 digits)  
+   - `dqfun_cwrap.f90`: Quad-double precision wrapper (~66 digits)  
    - `qxfun_cwrap.f90`: Extended quad precision wrapper (~33 digits)
 
 2. **Precision Type System** (`include/bailey/`): 
@@ -86,7 +86,7 @@ The Dockerfile automatically downloads and builds Bailey's DD/DQ/QX libraries fr
 The project supports four precision levels:
 - **double**: Standard IEEE 754 double precision (~15 decimal digits)
 - **DD**: Double-double (~30 decimal digits) - Bailey's DDFUN library
-- **DQ**: Quad-double (~64 decimal digits) - Bailey's DQFUN library
+- **DQ**: Quad-double (~66 decimal digits) - Bailey's DQFUN library
 - **QX**: Extended quad precision (~33 decimal digits) - Bailey's QXFUN library
 
 Usage examples:
@@ -132,7 +132,7 @@ The Conjugate Gradient implementation follows standard mathematical formulation:
 Relative performance compared to double precision:
 - **double**: Baseline performance
 - **DD**: 2-5x slower (~30 decimal digits)
-- **DQ**: 10-20x slower (~64 decimal digits) 
+- **DQ**: 10-20x slower (~66 decimal digits) 
 - **QX**: 5-10x slower (~33 decimal digits)
 
 ## Test Matrices

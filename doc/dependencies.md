@@ -10,9 +10,9 @@ The project depends on three libraries from David H. Bailey:
 
 | Library | Version | Precision | Decimal Digits | Description |
 |---------|---------|-----------|----------------|-------------|
-| DDFUN   | v03     | Double-double | ~32 | Uses 2 double-precision numbers |
-| DQFUN   | v03     | Quad-double | ~64 | Uses 2 quad-precision numbers |
-| QXFUN   | v01     | Extended quad | ~128+ | Single quad-precision with extensions |
+| DDFUN   | v03     | Double-double | ~30 | Uses 2 double-precision numbers |
+| DQFUN   | v03     | Quad-double | ~66 | Uses 2 quad-precision numbers |
+| QXFUN   | v01     | Extended quad | ~33 | Single quad-precision with extensions |
 
 ### Download Sources
 
@@ -131,7 +131,7 @@ echo $DDFUN_DIR
 - x86_64 glibc: `long double` is typically 80‑bit extended → DQ/QX unsupported; use DD or run on arm64.
 
 > [!TIP]
-> Verify inside the image: `make run NO_BUILD=1 -- check_ldbl`.
+> Verify inside the image: `make run NO_BUILD=1 -- tests/check_ldbl`.
 
 > [!IMPORTANT]
 > Only `dd`, `dq`, and `qx` are supported. The project does not provide `qd` (quad-double, 4×double).

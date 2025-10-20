@@ -32,7 +32,7 @@ make run -- cg_solver --matrix nos5 --precision qx     --tol 1e-20
 > Platform support: arm64 Linux container — DD/DQ/QX supported (here `long double` is IEEE 754 binary128). On x86_64 glibc, `long double` is typically 80‑bit extended; DQ/QX are unsupported in this repository. Use DD on x86_64 or run on arm64.
 
 > [!TIP]
-> Verify the floating‑point model inside the image: `make run NO_BUILD=1 -- check_ldbl`.
+> Verify the floating‑point model inside the image: `make run NO_BUILD=1 -- tests/check_ldbl`.
 
 > [!NOTE]
 > Future work: we plan to add x86_64 support for DQ/QX via a portable interface (e.g., _Float128/libquadmath) so that REAL(16) interop does not rely on `long double`.
