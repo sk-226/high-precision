@@ -1,4 +1,5 @@
 function plot_conv_hist(results, figure_title, opt)
+
     arguments
         results
         figure_title string
@@ -48,4 +49,5 @@ function plot_conv_hist(results, figure_title, opt)
     if ~opt.show_plot
         close(fig);
     end
+
 end

@@ -1,3 +1,3 @@
-file_name = "results.mat";
+file_name = "nos7_dq_3n.mat";
 load("outputs/"+file_name)
-plot_conv_hist(data.convergence, data.metadata.matrix_name)
+plot_conv_hist(convergence, metadata.matrix_name)

@@ -1,42 +1,174 @@
 #!/usr/bin/env bash
 # 使いたい行列名を並べる
 matrices=(
-  # diag+ssor で解けなかった行列
-  # LF10000
-  # LFAT5000
-  # bcsstk19
-  # bcsstk20
-  # bloweybq
-  # ex10
-  # ex10hs
-  # ex13
-  # ex3
-  # ex33
-  # ex5
-  # nos2
-  # plat1919
-  # plat362
-  # thread # 計算重すぎて一旦 pass
-  
-  # computational fluid dynamics problem
-  bcsstk13
-  # ex10 # not converged
-  # ex10hs # not converged
-  # ex13 # not converged
-  ex15
-  # ex3 # not converged
-  # ex33 # not converged
-  # ex5 # not converged
-  ex9
-  Pres_Poisson
+  HB/1138_bus
+  HB/494_bus
+  HB/662_bus
+  HB/685_bus
+  Bates/Chem97ZtZ
+  UTEP/Dubcova1
+  Pajek/Journals
+  MathWorks/Kuu
+  Oberwolfach/LF10
+  Oberwolfach/LF10000
+  Oberwolfach/LFAT5k
+  Oberwolfach/LFAT5000ak
+  MathWorks/Muu
+  ACUSIM/Pres_Poisson
+  JGD_Trefethen/Trefethen_150
+  JGD_Trefethen/Trefethen_20
+  JGD_Trefethen/Trefethen_200
+  JGD_Trefethen/Trefethen_2000
+  JGD_Trefethen/Trefethen_20000
+  JGD_Trefethen/Trefethen_20000b
+  JGD_Trefethen/Trefethen_200b
+  JGD_Trefethen/Trefethen_20b
+  JGD_Trefethen/Trefethen_300
+  JGD_Trefethen/Trefethen_500
+  JGD_Trefethen/Trefethen_700
+  Okunbor/aft01
+  HB/bcsstk01
+  HB/bcsstk02
+  HB/bcsstk03
+  HB/bcsstk04
+  HB/bcsstk05
+  HB/bcsstk06
+  HB/bcsstk07
+  HB/bcsstk08
+  HB/bcsstk09
+  HB/bcsstk10
+  HB/bcsstk11
+  HB/bcsstk12
+  HB/bcsstk13
+  HB/bcsstk14
+  HB/bcsstk15
+  HB/bcsstk16
+  HB/bcsstk17
+  HB/bcsstk18
+  HB/bcsstk19
+  HB/bcsstk20
+  HB/bcsstk21
+  HB/bcsstk22
+  HB/bcsstk23
+  HB/bcsstk24
+  HB/bcsstk25
+  HB/bcsstk26
+  HB/bcsstk27
+  HB/bcsstk28
+  Boeing/bcsstk34
+  Boeing/bcsstk36
+  Boeing/bcsstk38
+  HB/bcsstm02
+  HB/bcsstm05
+  HB/bcsstm06
+  HB/bcsstm07
+  HB/bcsstm08
+  HB/bcsstm09
+  HB/bcsstm11
+  HB/bcsstm12
+  HB/bcsstm19
+  HB/bcsstm20
+  HB/bcsstm21
+  HB/bcsstm22
+  HB/bcsstm23
+  HB/bcsstm24
+  HB/bcsstm25
+  HB/bcsstm26
+  Boeing/bcsstm39
+  JGD_BIBD/bibd_81_2
+  GHS_indef/bloweybq
+  Pothen/bodyy4
+  Pothen/bodyy5
+  Pothen/bodyy6
+  Lourakis/bundle1
+  TKK/cbuckle
+  Boeing/crystm01
+  Boeing/crystm02
+  Boeing/crystm03
+  GHS_psdef/cvxbqp1
+  FIDAP/ex10
+  FIDAP/ex10hs
+  FIDAP/ex13
+  FIDAP/ex15
+  FIDAP/ex3
+  FIDAP/ex33
+  FIDAP/ex5
+  FIDAP/ex9
+  Norris/fv1
+  Norris/fv2
+  Norris/fv3
+  HB/gr_30_30
+  GHS_psdef/gridgena
+  Oberwolfach/gyro
+  Oberwolfach/gyro_k
+  Oberwolfach/gyro_m
+  GHS_psdef/jnlbrng1
+  HB/lund_a
+  HB/lund_b
+  Pothen/mesh1e1
+  Pothen/mesh1em1
+  Pothen/mesh1em6
+  Pothen/mesh2e1
+  Pothen/mesh2em5
+  Pothen/mesh3e1
+  Pothen/mesh3em5
+  Bai/mhd3200b
+  Bai/mhd4800b
+  Bai/mhdb416
+  GHS_psdef/minsurfo
+  Boeing/msc00726
+  Boeing/msc01050
+  Boeing/msc01440
+  Boeing/msc04515
+  Boeing/msc10848
+  Boeing/msc23052
+  Nasa/nasa1824
+  Nasa/nasa2146
+  Nasa/nasa2910
+  Nasa/nasa4704
+  ND/nd12k
+  ND/nd3k
+  ND/nd6k
+  HB/nos1
+  HB/nos2
+  HB/nos3
+  HB/nos4
+  HB/nos5
+  HB/nos6
+  HB/nos7
+  GHS_psdef/obstclae
+  Simon/olafu
+  Williams/pdb1HYS
+  HB/plat1919
+  HB/plat362
+  TKK/plbuckle
+  Simon/raefsky4
+  Cylshell/s1rmq4m1
+  Cylshell/s1rmt3m1
+  Cylshell/s2rmq4m1
+  Cylshell/s2rmt3m1
+  Cylshell/s3rmq4m1
+  Cylshell/s3rmt3m1
+  Cylshell/s3rmt3m3
+  DNVS/ship_001
+  TKK/smt
+  Cannizzo/sts4098
+  Oberwolfach/t2dah_e
+  Oberwolfach/t2dal_e
+  Oberwolfach/t3dl_e
+  Bindel/ted_B
+  Bindel/ted_B_unscaled
+  DNVS/thread
+  GHS_psdef/torsion1
+  GHS_psdef/vanbody
+  GHS_psdef/wathen100
+  GHS_psdef/wathen120
 )
 
-docker build -t bailey-hp .
+precision="dq"
+
+# docker build -t bailey-hp .
 
 for m in "${matrices[@]}"; do
-  docker run --rm \
-    -v "$(pwd)/outputs:/work/outputs" \
-    bailey-hp \
-    ./build/cg_solver --matrix "$m" --precision dd --tol 1.0e-12 --max-iter 2.0\
-                      --export-mat "./outputs/${m}_dd.mat"
+  make run NO_BUILD=1 -- cg_solver --matrix "$m" --precision "$precision" --tol 1e-12 --max-iter 2.0 --export-mat "outputs/${m}_${precision}.mat" --export-csv "outputs/runs.csv"
 done
