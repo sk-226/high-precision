@@ -1,14 +1,11 @@
 #pragma once
 
+#include <Eigen/Sparse>
+#include <algorithm>
+#include <cmath>
+#include <cstring>
 #include <iostream>
 #include <string>
-#include <string_view>
-#include <cmath>
-#include <iomanip>
-#include <cstring>
-#include <algorithm>
-#include <Eigen/Sparse>
-#include <Eigen/Core>
 
 // ==============================================================================
 //  Bailey QX高精度算術ライブラリとの連携のためのQXNumber型定義
@@ -16,16 +13,20 @@
 // ==============================================================================
 
 extern "C" {
-    void qxadd_(const long double* a, const long double* b, long double* c);      // c = a + b
-    void qxsub_(const long double* a, const long double* b, long double* c);      // c = a - b  
-    void qxmul_(const long double* a, const long double* b, long double* c);      // c = a * b
-    void qxdiv_(const long double* a, const long double* b, long double* c);      // c = a / b
-    void qxdqd_(const double* d, long double* a);                                 // a = (double)d
-    void qxsqrt_(const long double* a, long double* b);                           // b = sqrt(a)
-    void qxabs_(const long double* a, long double* b);                            // b = abs(a)
-    void qx_to_string(const long double* a, int* n, char* c, int cl);
-    void qxfromstr_(const char* s, int len, long double* a);                      // a = parse(s)
-    void qx_read_line(const char* s, int len, long double* a);                    // parse via qxread
+void qxadd_(const long double* a, const long double* b,
+            long double* c);  // c = a + b
+void qxsub_(const long double* a, const long double* b,
+            long double* c);  // c = a - b
+void qxmul_(const long double* a, const long double* b,
+            long double* c);  // c = a * b
+void qxdiv_(const long double* a, const long double* b,
+            long double* c);                         // c = a / b
+void qxdqd_(const double* d, long double* a);        // a = (double)d
+void qxsqrt_(const long double* a, long double* b);  // b = sqrt(a)
+void qxabs_(const long double* a, long double* b);   // b = abs(a)
+void qx_to_string(const long double* a, int* n, char* c, int cl);
+void qxfromstr_(const char* s, int len, long double* a);    // a = parse(s)
+void qx_read_line(const char* s, int len, long double* a);  // parse via qxread
 }
 
 namespace bailey {
@@ -34,12 +35,15 @@ namespace bailey {
 /// Based on Bailey's QXFUN library using extended precision arithmetic
 struct QXNumber {
     long double qx = 0.0L;  // Use long double for better precision than double
-    
+
     QXNumber() = default;
-    QXNumber(double val) : qx(static_cast<long double>(val)) {}  // Remove explicit to allow implicit conversion
+    QXNumber(double val)
+        : qx(static_cast<long double>(val)) {
+    }  // Remove explicit to allow implicit conversion
     QXNumber(long double val) : qx(val) {}
-    QXNumber(int val) : qx(static_cast<long double>(val)) {}     // Add int constructor for Eigen
-    
+    QXNumber(int val)
+        : qx(static_cast<long double>(val)) {}  // Add int constructor for Eigen
+
     // Copy constructor and assignment
     QXNumber(const QXNumber& other) : qx(other.qx) {}
     QXNumber& operator=(const QXNumber& other) {
@@ -48,61 +52,61 @@ struct QXNumber {
         }
         return *this;
     }
-    
+
     // Direct access to long double for Bailey Fortran interface
     const long double* get_qx_ptr() const {
         return &qx;
     }
-    
+
     long double* get_qx_ptr() {
         return &qx;
     }
 };
 
 // --- Basic Arithmetic Operators ---
-inline QXNumber operator+(const QXNumber& a, const QXNumber& b) { 
+inline QXNumber operator+(const QXNumber& a, const QXNumber& b) {
     QXNumber result;
     qxadd_(a.get_qx_ptr(), b.get_qx_ptr(), result.get_qx_ptr());
-    return result; 
+    return result;
 }
 
-inline QXNumber operator-(const QXNumber& a, const QXNumber& b) { 
+inline QXNumber operator-(const QXNumber& a, const QXNumber& b) {
     QXNumber result;
     qxsub_(a.get_qx_ptr(), b.get_qx_ptr(), result.get_qx_ptr());
-    return result; 
+    return result;
 }
 
-inline QXNumber operator*(const QXNumber& a, const QXNumber& b) { 
+inline QXNumber operator*(const QXNumber& a, const QXNumber& b) {
     QXNumber result;
     qxmul_(a.get_qx_ptr(), b.get_qx_ptr(), result.get_qx_ptr());
-    return result; 
+    return result;
 }
 
-inline QXNumber operator/(const QXNumber& a, const QXNumber& b) { 
+inline QXNumber operator/(const QXNumber& a, const QXNumber& b) {
     QXNumber result;
     qxdiv_(a.get_qx_ptr(), b.get_qx_ptr(), result.get_qx_ptr());
-    return result; 
+    return result;
 }
 
 // --- Assignment Operators ---
-inline QXNumber& operator+=(QXNumber& a, const QXNumber& b) { 
-    a = a + b; 
-    return a; 
+inline QXNumber& operator+=(QXNumber& a, const QXNumber& b) {
+    a = a + b;
+    return a;
 }
 
-inline QXNumber& operator-=(QXNumber& a, const QXNumber& b) { 
-    a = a - b; 
-    return a; 
+inline QXNumber& operator-=(QXNumber& a, const QXNumber& b) {
+    a = a - b;
+    return a;
 }
 
-inline QXNumber& operator*=(QXNumber& a, const QXNumber& b) { 
-    a = a * b; 
-    return a; 
+inline QXNumber& operator*=(QXNumber& a, const QXNumber& b) {
+    a = a * b;
+    return a;
 }
 
-inline QXNumber& operator/=(QXNumber& a, const QXNumber& b) { 
-    a = a / b; 
-    return a; 
+inline QXNumber& operator/=(QXNumber& a, const QXNumber& b) {
+    a = a / b;
+    return a;
 }
 
 // --- Comparison Operators (Essential for CG algorithm) ---
@@ -111,9 +115,9 @@ inline bool operator==(const QXNumber& a, const QXNumber& b) {
     constexpr long double QX_EPSILON = 1e-31L;
     long double diff = std::abs(a.qx - b.qx);
     long double max_val = std::max(std::abs(a.qx), std::abs(b.qx));
-    
+
     if (max_val < 1e-15L) {
-        return diff < 1e-15L; // Absolute comparison for near-zero
+        return diff < 1e-15L;  // Absolute comparison for near-zero
     }
     return diff / max_val < QX_EPSILON;
 }
@@ -124,7 +128,8 @@ inline bool operator!=(const QXNumber& a, const QXNumber& b) {
 
 inline bool operator<(const QXNumber& a, const QXNumber& b) {
     constexpr long double QX_EPSILON = 1e-31L;
-    return (b.qx - a.qx) > QX_EPSILON * std::max(std::abs(a.qx), std::abs(b.qx));
+    return (b.qx - a.qx) >
+           QX_EPSILON * std::max(std::abs(a.qx), std::abs(b.qx));
 }
 
 inline bool operator<=(const QXNumber& a, const QXNumber& b) {
@@ -140,10 +145,10 @@ inline bool operator>=(const QXNumber& a, const QXNumber& b) {
 }
 
 // --- Mathematical Functions ---
-inline QXNumber sqrt(const QXNumber& a) { 
+inline QXNumber sqrt(const QXNumber& a) {
     QXNumber result;
     qxsqrt_(a.get_qx_ptr(), result.get_qx_ptr());
-    return result; 
+    return result;
 }
 
 inline QXNumber abs(const QXNumber& a) {
@@ -153,7 +158,7 @@ inline QXNumber abs(const QXNumber& a) {
 }
 
 // --- Type Conversion ---
-inline std::string to_string(const QXNumber& a, int digits=33) {
+inline std::string to_string(const QXNumber& a, int digits = 33) {
     char s[128] = {0};
     qx_to_string(&a.qx, &digits, s, sizeof(s));
     return std::string(s, strnlen(s, sizeof(s)));
@@ -179,27 +184,32 @@ inline std::ostream& operator<<(std::ostream& os, const QXNumber& q) {
     return os;
 }
 
-} // namespace bailey
+}  // namespace bailey
 
 // --- Eigen Integration ---
 namespace Eigen {
-    template<> struct NumTraits<bailey::QXNumber> : GenericNumTraits<bailey::QXNumber> {
-        using Real = bailey::QXNumber; 
-        using NonInteger = bailey::QXNumber; 
-        using Nested = bailey::QXNumber;
-        static int digits10() { return 33; }
-        static int digits() { return 113; }
-        enum { 
-            IsComplex = 0, 
-            IsInteger = 0, 
-            IsSigned = 1, 
-            RequireInitialization = 1, 
-            ReadCost = 1,      // Single scalar value
-            AddCost = 8,       // Estimated cost for QX operations
-            MulCost = 16       // Estimated cost for QX operations
-        };
+template <>
+struct NumTraits<bailey::QXNumber> : GenericNumTraits<bailey::QXNumber> {
+    using Real = bailey::QXNumber;
+    using NonInteger = bailey::QXNumber;
+    using Nested = bailey::QXNumber;
+    static int digits10() {
+        return 33;
+    }
+    static int digits() {
+        return 113;
+    }
+    enum {
+        IsComplex = 0,
+        IsInteger = 0,
+        IsSigned = 1,
+        RequireInitialization = 1,
+        ReadCost = 1,  // Single scalar value
+        AddCost = 8,   // Estimated cost for QX operations
+        MulCost = 16   // Estimated cost for QX operations
     };
-} // namespace Eigen
+};
+}  // namespace Eigen
 
 // --- Type Aliases ---
 using SpMat_QX = Eigen::SparseMatrix<bailey::QXNumber>;
