@@ -39,7 +39,7 @@ struct PrecisionTraits<bailey::DDNumber> {
     static constexpr int decimal_digits() { return 30; }
 };
 
-/// Quad-Double precision (DQ) - ~64 decimal digits  
+/// Quad-Double precision (DQ) - ~66 decimal digits  
 /// Uses Bailey's DQFUN library for very high precision arithmetic
 template<>
 struct PrecisionTraits<bailey::DQNumber> {
@@ -48,7 +48,7 @@ struct PrecisionTraits<bailey::DQNumber> {
     using vector_type = Eigen::Vector<bailey::DQNumber, Eigen::Dynamic>;
     
     static constexpr const char* name() { return "DQ"; }
-    static constexpr int decimal_digits() { return 64; }
+    static constexpr int decimal_digits() { return 66; }
 };
 
 /// Extended Quad precision (QX) - ~33 decimal digits
