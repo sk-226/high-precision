@@ -1,0 +1,16 @@
+inputs_dir = 'outputs_dd';
+output_dir = 'outputs_dd_figs';
+
+inputs = dir(fullfile(inputs_dir,'**','*.mat'));
+inputs = inputs(~[inputs.isdir]); % inputs.name を使う
+n_files = length(inputs);
+
+for i = 1:n_files
+    load(fullfile(inputs(i).folder, inputs(i).name));
+    plot_conv_hist(convergence, metadata.matrix_name, ...
+        'show_plot', false, ...
+        'save_fig', true, ...
+        'save_fig_filename', strcat(metadata.matrix_name, '_dd'), ...
+        'format_type', 'pdf', ...
+        'output_dir', output_dir)
+end

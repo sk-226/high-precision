@@ -5,7 +5,7 @@ function plot_conv_hist(results, figure_title, opt)
         figure_title string
         opt.show_plot = true
         opt.save_fig = false
-        opt.save_fig_prefix = ""
+        opt.save_fig_filename = ""
         opt.format_type = "pdf"
         opt.output_dir = ""
         opt.y_lim = [1e-13 1e+1]
@@ -40,8 +40,18 @@ function plot_conv_hist(results, figure_title, opt)
     hold off;
 
     if opt.save_fig
-        % Generate complete file path including extension
-        file_name = strcat(opt.output_dir, "/", opt.save_fig_prefix, ".", opt.format_type);
+        % Resolve nested directories included in save_fig_filename and ensure directory exists
+        filename_norm = strrep(opt.save_fig_filename, '\\', filesep);
+        [filename_dir, filename, ~] = fileparts(filename_norm);
+        target_dir = opt.output_dir;
+        if ~isempty(filename_dir)
+            target_dir = fullfile(opt.output_dir, filename_dir);
+        end
+        if ~exist(target_dir, 'dir')
+            mkdir(target_dir);
+        end
+        % Build complete file path including extension
+        file_name = fullfile(target_dir, strcat(filename, ".", opt.format_type));
         saveas(fig, file_name);
     end
 
