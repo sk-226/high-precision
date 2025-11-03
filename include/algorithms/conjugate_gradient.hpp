@@ -27,12 +27,15 @@ struct CGResult {
     std::vector<double> hist_relres_2;  ///< Relative residual 2-norm history
     std::vector<double> hist_relerr_2;  ///< Relative error 2-norm history  
     std::vector<double> hist_relerr_A;  ///< Relative error A-norm history
+    std::vector<double> hist_res_orthogonality;  ///< Residual orthogonality
+    std::vector<double> hist_search_direction_A_orthogonality;  ///< Search direction A-orthogonality
     
     // Final metrics
     double true_relres_2;               ///< True relative residual (b-Ax verification)
     double final_residual_norm;         ///< Final relative residual norm
     double initial_residual_norm;       ///< Initial residual norm
     std::string precision_name{Traits::name()};  ///< Precision level name
+    int proper_search_lag{0};           ///< Proper-search lag (0 means unused)
 };
 
 /// Conjugate Gradient solver with comprehensive convergence tracking
