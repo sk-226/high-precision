@@ -126,7 +126,7 @@ CGResult<T> conjugateGradient(
         // Compute orthogonality metrics
         double res_orth = std::numeric_limits<double>::quiet_NaN();
         double dirA_orth = std::numeric_limits<double>::quiet_NaN();
-        if (iter >= lag) {
+        if (iter > lag) {
             const auto& r_l = r_buf[lag];  // r_{k-lag}
             const auto& w_l = w_buf[lag];  // A*p_{k-lag}
 
