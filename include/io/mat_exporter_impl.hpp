@@ -41,6 +41,18 @@ bool MatExporter::export_convergence_data(
         matioCpp::Element<double> computation_time("computation_time");
         computation_time = result.computation_time;
         metadata.setField(computation_time);
+
+        matioCpp::Element<double> initial_residual_norm("initial_residual_norm");
+        initial_residual_norm = result.initial_residual_norm;
+        metadata.setField(initial_residual_norm);
+
+        matioCpp::Element<double> final_residual_norm("final_residual_norm");
+        final_residual_norm = result.final_residual_norm;
+        metadata.setField(final_residual_norm);
+
+        matioCpp::Element<double> true_relres_2("true_relres_2");
+        true_relres_2 = result.true_relres_2;
+        metadata.setField(true_relres_2);
         
         // Note: Final metrics are intentionally omitted from metadata.
         // They are exported to CSV separately and can be derived from histories.
@@ -73,6 +85,29 @@ bool MatExporter::export_convergence_data(
         bool write_ok = true;
         write_ok = write_ok && file.write(metadata);
         write_ok = write_ok && file.write(convergence);
+
+        if (result.proper_search_lag > 0 ||
+            !result.hist_res_orthogonality.empty() ||
+            !result.hist_search_direction_A_orthogonality.empty()) {
+            matioCpp::Struct proper_search("proper_search");
+
+            matioCpp::Element<double> lag("lag");
+            lag = static_cast<double>(result.proper_search_lag);
+            proper_search.setField(lag);
+
+            if (!result.hist_res_orthogonality.empty()) {
+                proper_search.setField(matioCpp::Vector<double>(
+                    "hist_res_orthogonality", result.hist_res_orthogonality));
+            }
+
+            if (!result.hist_search_direction_A_orthogonality.empty()) {
+                proper_search.setField(matioCpp::Vector<double>(
+                    "hist_search_direction_A_orthogonality",
+                    result.hist_search_direction_A_orthogonality));
+            }
+
+            write_ok = write_ok && file.write(proper_search);
+        }
         if (!write_ok) {
             std::cerr << "Error: Failed to write variables to " << filename << std::endl;
             return false;
