@@ -27,7 +27,7 @@ inputs/*
 !inputs/test/**
 
 # Generated solver outputs and logs
-outputs/
+*outputs*/
 
 # Extensionless binaries under tests (e.g., debug executables)
 tests/**/[^/]*

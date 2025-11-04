@@ -23,7 +23,7 @@ CGResult<T> conjugateGradient(
     using Traits = bailey::PrecisionTraits<T>;
     using VectorType = typename Traits::vector_type;
 
-    int lag = 1;  // ←ここを書き換えて lag を変更可能
+    int lag = 2;  // ←ここを書き換えて lag を変更可能
 
     auto start_time = std::chrono::high_resolution_clock::now();
 

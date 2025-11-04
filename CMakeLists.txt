@@ -91,6 +91,18 @@ if(MAT_EXPORT_AVAILABLE)
     target_compile_definitions(cg_solver PRIVATE ENABLE_MAT_EXPORT)
 endif()
 
+add_executable(cg_solver_proper_search src/cg_solver_proper_search.cpp)
+target_include_directories(cg_solver_proper_search PRIVATE ${COMMON_INCLUDE_DIRS})
+target_link_libraries(cg_solver_proper_search PRIVATE ${MATRIX_MARKET_LIBRARIES})
+target_compile_features(cg_solver_proper_search PRIVATE cxx_std_20)
+if(BLAS_ENABLED)
+    target_compile_definitions(cg_solver_proper_search PRIVATE EIGEN_USE_BLAS EIGEN_USE_LAPACKE)
+endif()
+if(MAT_EXPORT_AVAILABLE)
+    target_link_libraries(cg_solver_proper_search PRIVATE matioCpp::matioCpp)
+    target_compile_definitions(cg_solver_proper_search PRIVATE ENABLE_MAT_EXPORT)
+endif()
+
 # メインデモプログラム
 # add_executable(sample_qx src/experiments/main.cpp)
 # target_include_directories(sample_qx PRIVATE ${COMMON_INCLUDE_DIRS})
@@ -110,50 +122,7 @@ endif()
 # target_compile_features(nos5_cg PRIVATE cxx_std_17)
 
 # ---------- テスト・ベンチマークプログラム -----------------------------------
-
-# 基本的なQuadDouble演算テスト
-add_executable(test_basic src/benchmarks/test_basic.cpp)
-target_include_directories(test_basic PRIVATE ${COMMON_INCLUDE_DIRS})
-target_link_libraries(test_basic PRIVATE ${COMMON_LIBRARIES})
-target_compile_features(test_basic PRIVATE cxx_std_17)
-
-
-# Precision validation test
-add_executable(precision_validation_test src/precision_validation_test.cpp)
-target_include_directories(precision_validation_test PRIVATE ${COMMON_INCLUDE_DIRS})
-target_link_libraries(precision_validation_test PRIVATE ${COMMON_LIBRARIES})
-target_compile_features(precision_validation_test PRIVATE cxx_std_17)
-
-# Check long double properties
-add_executable(check_ldbl src/check_ldbl.cpp)
-target_include_directories(check_ldbl PRIVATE ${COMMON_INCLUDE_DIRS})
-target_link_libraries(check_ldbl PRIVATE ${COMMON_LIBRARIES})
-target_compile_features(check_ldbl PRIVATE cxx_std_17)
-
-# Sanity check program: (sqrt(2))^2 - 2 in DD/DQ/QX
-add_executable(prec_sanity src/prec_sanity.cpp)
-target_include_directories(prec_sanity PRIVATE ${COMMON_INCLUDE_DIRS})
-target_link_libraries(prec_sanity PRIVATE ${COMMON_LIBRARIES})
-target_compile_features(prec_sanity PRIVATE cxx_std_17)
-
-# Scalar precision regression test (DD/DQ/QX)
-add_executable(scalar_precision_test tests/scalar_precision_test.cpp)
-target_include_directories(scalar_precision_test PRIVATE ${COMMON_INCLUDE_DIRS})
-target_link_libraries(scalar_precision_test PRIVATE ${COMMON_LIBRARIES})
-target_compile_features(scalar_precision_test PRIVATE cxx_std_17)
-add_test(NAME scalar_precision_test COMMAND scalar_precision_test)
-
-# Matrix Market loader smoke test (prints matrix in multiple precisions)
-add_executable(matrix_loader_test tests/matrix_loader_test.cpp)
-target_include_directories(matrix_loader_test PRIVATE ${COMMON_INCLUDE_DIRS})
-target_link_libraries(matrix_loader_test PRIVATE ${COMMON_LIBRARIES})
-target_compile_features(matrix_loader_test PRIVATE cxx_std_17)
-
-# Eigen-based high-precision arithmetic checks
-# add_executable(eigen_precision_test tests/eigen_precision_test.cpp)
-# target_include_directories(eigen_precision_test PRIVATE ${COMMON_INCLUDE_DIRS})
-# target_link_libraries(eigen_precision_test PRIVATE ${COMMON_LIBRARIES})
-# target_compile_features(eigen_precision_test PRIVATE cxx_std_17)
+add_subdirectory(tests)
 
 # ---------- Fortran 検証プログラム -------------------------------------------
 # DQ: eps と (sqrt(2))^2-2

@@ -76,9 +76,9 @@ void test_dd_precision() {
     std::cout << std::endl;
 }
 
-// Test precision for DQ arithmetic (~64 digits)  
+// Test precision for DQ arithmetic (~66 digits)  
 void test_dq_precision() {
-    std::cout << "=== DQ Precision Test (~64 digits) ===" << std::endl;
+    std::cout << "=== DQ Precision Test (~66 digits) ===" << std::endl;
     
     using DQTraits = bailey::PrecisionTraits<bailey::DQNumber>;
     std::cout << "Expected precision: " << DQTraits::decimal_digits() << " digits" << std::endl;
@@ -137,7 +137,7 @@ void test_comparison_safety() {
     bailey::DQNumber dq1(1.0/7.0);
     bailey::DQNumber dq2 = bailey::DQNumber(1.0) / bailey::DQNumber(7.0);
     
-    double dq_epsilon = 1e-62;  // ~64 digits - 2 margin
+    double dq_epsilon = 1e-64;  // ~66 digits - 2 margin
     bool dq_equal = approx_equal(dq1, dq2, dq_epsilon);
     std::cout << "DQ 1/7 comparison: " << (dq_equal ? "PASS" : "FAIL") << std::endl;
     
