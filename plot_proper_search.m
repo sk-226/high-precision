@@ -14,6 +14,7 @@ legend, box on;
 title(metadata.matrix_name);
 xlabel('Number of Iterations');
 ylabel('Log_{10} of orthogonality (cos)');
+yscale('log');
 ylim(gca,[1e-19 1e+1]);
 set(gca,...
     'FontSize',16,...

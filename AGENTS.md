@@ -16,7 +16,7 @@
   - `export QXFUN_DIR=... DQFUN_DIR=... DDFUN_DIR=...`
   - `cmake -S . -B build -G Ninja -DQXFUN_DIR=$QXFUN_DIR -DDQFUN_DIR=$DQFUN_DIR -DDDFUN_DIR=$DDFUN_DIR`
   - `cmake --build build --config Release`
-- Test binaries (after build): `./build/test_basic`, `./build/precision_validation_test`, `./build/check_ldbl`, `./build/prec_sanity`.
+- Test binaries (after build): `./build/tests/test_basic`, `./build/tests/precision_validation_test`, `./build/tests/check_ldbl`, `./build/tests/prec_sanity`.
 
 ## Coding Style & Naming Conventions
 - C++17/20, Fortran for wrappers; 4‑space indent, `#pragma once` in headers.

@@ -23,7 +23,7 @@ make run NO_BUILD=1 -- cg_solver --matrix nos5 --precision dq --tol 1e-15 --max-
 > The container workdir is `/work`. Host `./inputs` is mounted to `/work/inputs` (read-only) and `./outputs` persists results.
 
 > [!IMPORTANT]
-> If you customize the base image or use a local toolchain, verify the floating‑point model before using DQ/QX: `cmake --build build && ./build/check_ldbl`.
+> If you customize the base image or use a local toolchain, verify the floating‑point model before using DQ/QX: `cmake --build build && ./build/tests/check_ldbl`.
 >
 > Only `dd`, `dq`, and `qx` are supported. `qd` (quad-double) is not supported in this project.
 

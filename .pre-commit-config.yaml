@@ -1,0 +1,20 @@
+repos:
+  - repo: local
+    hooks:
+      - id: clang-format
+        name: clang-format
+        entry: clang-format
+        language: system
+        types_or: [c, c++]
+        files: '\\.(c|cc|cpp|cxx|c\+\+|h|hh|hpp|hxx)$'
+        exclude: '^(lib/fast_matrix_market/|interfaces/|third_party/|tests/(ddfun|dqfun|qxfun)/)'
+        args: ['-i', '-style=file']
+      - id: clang-tidy
+        name: clang-tidy
+        entry: tools/run-clang-tidy.sh
+        language: system
+        pass_filenames: true
+        require_serial: true
+        types_or: [c++]
+        files: '\\.(cc|cpp|cxx|c\+\+)$'
+        exclude: '^(lib/fast_matrix_market/|interfaces/|third_party/|tests/(ddfun|dqfun|qxfun)/)'

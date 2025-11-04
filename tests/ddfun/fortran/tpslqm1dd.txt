@@ -16,7 +16,7 @@ Min, max of y =   3.379064e  -32   1.100961e  -22
 Max. bound =   9.826571e    1
 Index of relation =   4   Norm =   1.650333e    2   Residual =   3.379064e  -32
 CPU times:
-        0.00        0.01
+        0.00        0.00
 
 Recovered relation:
                                    -1.00
@@ -29,5 +29,5 @@ Recovered relation:
                                     0.00
                                     0.00
                                     1.00
-CPU Time =      0.0052
+CPU Time =      0.0007
 TEST PASSED

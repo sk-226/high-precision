@@ -13,15 +13,15 @@ This project bridges Fortran-based high-precision arithmetic libraries with C++ 
 > Platform support: arm64 Linux (container) — DD/DQ/QX supported (`long double` ≈ IEEE‑754 binary128). x86_64 glibc — DQ/QX unsupported (`long double` is 80‑bit extended); use DD or run inside the provided arm64 container.
 
 > [!TIP]
-> Quick check inside the image: `make run NO_BUILD=1 -- check_ldbl`.
+> Quick check inside the image: `make run NO_BUILD=1 -- tests/check_ldbl`.
 
 > [!NOTE]
 > Future work: plan to support DQ/QX on x86_64 via a portable REAL(16) interop (e.g., _Float128/libquadmath) rather than relying on `long double`.
 
 ### Precision Levels
 
-- **DD (DDFUN)**: double-double (~30–32 decimal digits)
-- **DQ (DQFUN)**: double-quad = 2×quad (~64 decimal digits)
+- **DD (DDFUN)**: double-double (~30 decimal digits)
+- **DQ (DQFUN)**: double-quad = 2×quad (~66 decimal digits)
 - **QX (QXFUN)**: single quad/extended (~33 decimal digits)
 
 The solver supports all three. Pick via `--precision dd|dq|qx`.
@@ -69,7 +69,7 @@ See [Dependencies](dependencies.md) for detailed setup instructions, and [Remote
 
 ## Key Features
 
-- **High-Precision Arithmetic**: Up to ~64 decimal digits (DQ) and ~33 digits (QX)
+- **High-Precision Arithmetic**: Up to ~66 decimal digits (DQ) and ~33 digits (QX)
 - **Sparse Matrix Support**: Efficient sparse linear algebra with Eigen3
 - **Cross-Language Integration**: Fortran libraries accessible from C++
 - **Concurrency-Friendly**: Our wrappers are stateless; using separate data per thread is safe. Coordinate access when sharing matrices/vectors.
