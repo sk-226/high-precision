@@ -20,6 +20,12 @@ RUN_TOKENS := $(filter-out run --,$(MAKECMDGOALS))
 RUN_EXE := $(if $(RUN_TOKENS),$(firstword $(RUN_TOKENS)),cg_solver)
 RUN_ARGS := $(wordlist 2,$(words $(RUN_TOKENS)),$(RUN_TOKENS))
 
+# Pass-through of environment variables to container (e.g., CG_PROPER_SEARCH_LAG=2)
+RUN_ENV :=
+ifdef CG_PROPER_SEARCH_LAG
+RUN_ENV += -e CG_PROPER_SEARCH_LAG=$(CG_PROPER_SEARCH_LAG)
+endif
+
 # Run a built binary inside the Docker image
 # Always define the rule; conditionally add prerequisite
 RUN_DEPS :=
@@ -36,9 +42,9 @@ run: $(RUN_DEPS)
 	  fi; \
 	fi
 	@if [ -n "$(CMD)" ]; then \
-	  docker run --rm $(DOCKER_RUN_FLAGS) $(DOCKER_IMAGE) sh -lc "exec /work/build/$(CMD)"; \
+	  docker run --rm $(DOCKER_RUN_FLAGS) $(RUN_ENV) $(DOCKER_IMAGE) sh -lc "exec /work/build/$(CMD)"; \
 	else \
-	  docker run --rm $(DOCKER_RUN_FLAGS) $(DOCKER_IMAGE) /work/build/$(RUN_EXE) $(RUN_ARGS); \
+	  docker run --rm $(DOCKER_RUN_FLAGS) $(RUN_ENV) $(DOCKER_IMAGE) /work/build/$(RUN_EXE) $(RUN_ARGS); \
 	fi
 
 # -----------------------------

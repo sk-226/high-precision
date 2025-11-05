@@ -16,11 +16,11 @@ matrices=(
 )
 
 precision="double"
+lag=2 # proper search lag
 
 # docker build -t bailey-hp .
 
-export CG_PROPER_SEARCH_LAG=1
 
 for m in "${matrices[@]}"; do
-  make run NO_BUILD=1 -- cg_solver_proper_search --matrix "$m" --precision "$precision" --tol 1e-12 --max-iter 2.0 --export-mat "outputs/${m}_${precision}.mat" --export-csv "outputs/runs.csv"
+  CG_PROPER_SEARCH_LAG="$lag" make run NO_BUILD=1 -- cg_solver_proper_search --matrix "$m" --precision "$precision" --tol 1e-12 --max-iter 2.0 --export-mat "outputs/${m}_${precision}.mat" --export-csv "outputs/runs.csv"
 done
