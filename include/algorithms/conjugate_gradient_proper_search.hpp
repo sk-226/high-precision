@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <cmath>
+#include <cstdlib>
 #include <limits>
 #include <vector>
 
@@ -23,7 +24,15 @@ CGResult<T> conjugateGradient(
     using Traits = bailey::PrecisionTraits<T>;
     using VectorType = typename Traits::vector_type;
 
-    int lag = 2;  // ←ここを書き換えて lag を変更可能
+    // Read lag value from environment variable CG_PROPER_SEARCH_LAG, default to 2
+    int lag = 1;
+    const char* lag_env = std::getenv("CG_PROPER_SEARCH_LAG");
+    if (lag_env != nullptr) {
+        lag = std::atoi(lag_env);
+        if (lag < 1) {
+            lag = 1;  // Fallback to default if invalid value
+        }
+    }
 
     auto start_time = std::chrono::high_resolution_clock::now();
 
