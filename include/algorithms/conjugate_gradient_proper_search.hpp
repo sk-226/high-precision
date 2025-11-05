@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <cmath>
+#include <cstdlib>
 #include <limits>
 #include <vector>
 
@@ -23,7 +24,15 @@ CGResult<T> conjugateGradient(
     using Traits = bailey::PrecisionTraits<T>;
     using VectorType = typename Traits::vector_type;
 
-    int lag = 2;  // ←ここを書き換えて lag を変更可能
+    // Read lag value from environment variable CG_PROPER_SEARCH_LAG, default to 2
+    int lag = 1;
+    const char* lag_env = std::getenv("CG_PROPER_SEARCH_LAG");
+    if (lag_env != nullptr) {
+        lag = std::atoi(lag_env);
+        if (lag < 1) {
+            lag = 1;  // Fallback to default if invalid value
+        }
+    }
 
     auto start_time = std::chrono::high_resolution_clock::now();
 
@@ -63,9 +72,6 @@ CGResult<T> conjugateGradient(
         to_double(sqrt(err.dot(err)) / norm2_x_true));
     result.hist_relerr_A.push_back(
         to_double(sqrt(err.dot(A * err)) / normA_x_true));
-
-    result.hist_res_orthogonality.push_back(std::nan("NaN"));
-    result.hist_search_direction_A_orthogonality.push_back(std::nan("NaN"));
 
     // Initialize search direction p = r
     VectorType p = r;
@@ -115,39 +121,39 @@ CGResult<T> conjugateGradient(
         result.hist_relerr_A.push_back(
             to_double(sqrt(err.dot(A * err)) / normA_x_true));
 
-        // Update buffer: shift and push current r and w to front
-        for (int j = lag; j >= 1; --j) {
-            r_buf[j] = r_buf[j - 1];
-            w_buf[j] = w_buf[j - 1];
-        }
-        r_buf[0] = r;  // current k
-        w_buf[0] = w;  // current A*p_k
-
         // Compute orthogonality metrics
         double res_orth = std::numeric_limits<double>::quiet_NaN();
         double dirA_orth = std::numeric_limits<double>::quiet_NaN();
         if (iter >= lag) {
-            const auto& r_l = r_buf[lag];  // r_{k-lag}
-            const auto& w_l = w_buf[lag];  // A*p_{k-lag}
+            const auto& r_l = r_buf[lag - 1];  // r_{k-lag}
+            const auto& w_l = w_buf[lag - 1];  // A*p_{k-lag}
 
             // Residual orthogonality: |r_k^T r_{k-lag}| / (||r_k||
             // ||r_{k-lag}||)
-            const T den_r = sqrt(r.dot(r)) * sqrt(r_l.dot(r_l));
-            if (den_r > T(0)) {
-                const T num_r = abs(r.dot(r_l));
+            const double den_r = std::sqrt(to_double(r.dot(r))) * std::sqrt(to_double(r_l.dot(r_l)));
+            if (den_r > 0) {
+                const double num_r = std::abs(to_double(r.dot(r_l)));
                 res_orth = to_double(num_r / den_r);
             }
 
             // Search direction A-orthogonality: |p_k^T A p_{k-lag}| / (||p_k||
             // ||A p_{k-lag}||)
-            const T den_pAw = sqrt(p.dot(p)) * sqrt(w_l.dot(w_l));
-            if (den_pAw > T(0)) {
-                const T num_pAw = abs(p.dot(w_l));
+            const double den_pAw = std::sqrt(to_double(p.dot(p))) * std::sqrt(to_double(w_l.dot(w_l)));
+            if (den_pAw > 0) {
+                const double num_pAw = std::abs(to_double(p.dot(w_l)));
                 dirA_orth = to_double(num_pAw / den_pAw);
             }
         }
         result.hist_res_orthogonality.push_back(res_orth);
         result.hist_search_direction_A_orthogonality.push_back(dirA_orth);
+
+        // Update buffer: shift and push current r and w to front (after metrics)
+        for (int j = lag; j >= 1; j--) {
+            r_buf[j] = r_buf[j - 1];
+            w_buf[j] = w_buf[j - 1];
+        }
+        r_buf[0] = r;  // current k
+        w_buf[0] = w;  // current A*p_k
 
         // Check convergence: ||r||₂ / ||b||₂ < tolerance
         if (result.hist_relres_2.back() < tolerance) {
