@@ -3,46 +3,48 @@
 // This file is only included when ENABLE_MAT_EXPORT is defined
 #ifdef ENABLE_MAT_EXPORT
 
-#include "mat_exporter.hpp"
 #include <matioCpp/matioCpp.h>
+
 #include <iostream>
+
+#include "mat_exporter.hpp"
 
 namespace io {
 
-template<typename T>
-bool MatExporter::export_convergence_data(
-    const algorithms::CGResult<T>& result,
-    const std::string& filename,
-    const std::string& matrix_name,
-    const std::string& precision_name
-) {
+template <typename T>
+bool MatExporter::export_convergence_data(const algorithms::CGResult<T>& result,
+                                          const std::string& filename,
+                                          const std::string& matrix_name,
+                                          const std::string& precision_name) {
     try {
         // --- Metadata section (top-level variable) ---
         matioCpp::Struct metadata("metadata");
-        
+
         // Problem information
         metadata.setField(matioCpp::String("matrix_name", matrix_name));
         metadata.setField(matioCpp::String("precision_name", precision_name));
-        
+
         // Create and set precision digits
         matioCpp::Element<double> precision_digits("precision_digits");
-        precision_digits = static_cast<double>(get_precision_digits(precision_name));
+        precision_digits =
+            static_cast<double>(get_precision_digits(precision_name));
         metadata.setField(precision_digits);
-        
+
         // Convergence results
         matioCpp::Element<uint8_t> converged("converged");
         converged = result.converged ? 1 : 0;
         metadata.setField(converged);
-        
+
         matioCpp::Element<double> iterations_performed("iterations_performed");
         iterations_performed = static_cast<double>(result.iterations_performed);
         metadata.setField(iterations_performed);
-        
+
         matioCpp::Element<double> computation_time("computation_time");
         computation_time = result.computation_time;
         metadata.setField(computation_time);
 
-        matioCpp::Element<double> initial_residual_norm("initial_residual_norm");
+        matioCpp::Element<double> initial_residual_norm(
+            "initial_residual_norm");
         initial_residual_norm = result.initial_residual_norm;
         metadata.setField(initial_residual_norm);
 
@@ -53,33 +55,39 @@ bool MatExporter::export_convergence_data(
         matioCpp::Element<double> true_relres_2("true_relres_2");
         true_relres_2 = result.true_relres_2;
         metadata.setField(true_relres_2);
-        
+
         // Note: Final metrics are intentionally omitted from metadata.
-        // They are exported to CSV separately and can be derived from histories.
-        
+        // They are exported to CSV separately and can be derived from
+        // histories.
+
         // --- Convergence history section (top-level variable) ---
         matioCpp::Struct convergence("convergence");
-        
+
         // Create iteration vector
         std::vector<double> iterations;
         for (size_t i = 0; i < result.hist_relres_2.size(); ++i) {
             iterations.push_back(static_cast<double>(i));
         }
-        
-        convergence.setField(matioCpp::Vector<double>("hist_iterations", iterations));
-        convergence.setField(matioCpp::Vector<double>("hist_relres_2", result.hist_relres_2));
-        convergence.setField(matioCpp::Vector<double>("hist_relerr_2", result.hist_relerr_2));
-        convergence.setField(matioCpp::Vector<double>("hist_relerr_A", result.hist_relerr_A));
-        
+
+        convergence.setField(
+            matioCpp::Vector<double>("hist_iterations", iterations));
+        convergence.setField(
+            matioCpp::Vector<double>("hist_relres_2", result.hist_relres_2));
+        convergence.setField(
+            matioCpp::Vector<double>("hist_relerr_2", result.hist_relerr_2));
+        convergence.setField(
+            matioCpp::Vector<double>("hist_relerr_A", result.hist_relerr_A));
+
         // Add final iteration number
         matioCpp::Element<double> iter_final("iter_final");
         iter_final = static_cast<double>(result.iterations_performed);
         convergence.setField(iter_final);
-        
+
         // Write to file (two top-level variables)
         matioCpp::File file = matioCpp::File::Create(filename);
         if (!file.isOpen()) {
-            std::cerr << "Error: Could not create file " << filename << std::endl;
+            std::cerr << "Error: Could not create file " << filename
+                      << '\n';
             return false;
         }
         bool write_ok = true;
@@ -109,26 +117,37 @@ bool MatExporter::export_convergence_data(
             write_ok = write_ok && file.write(proper_search);
         }
         if (!write_ok) {
-            std::cerr << "Error: Failed to write variables to " << filename << std::endl;
+            std::cerr << "Error: Failed to write variables to " << filename
+                      << '\n';
             return false;
         }
-        
+
         return true;
-        
+
     } catch (const std::exception& e) {
-        std::cerr << "Error exporting to " << filename << ": " << e.what() << std::endl;
+        std::cerr << "Error exporting to " << filename << ": " << e.what()
+                  << '\n';
         return false;
     }
 }
 
-inline int MatExporter::get_precision_digits(const std::string& precision_name) {
-    if (precision_name == "double") return 15;
-    if (precision_name == "dd") return 30;
-    if (precision_name == "dq") return 66;
-    if (precision_name == "qx") return 33;
-    return 15; // Default to double precision
+inline int MatExporter::get_precision_digits(
+    const std::string& precision_name) {
+    // Handle mixed precision labels (e.g., "dq+double") by extracting base
+    // precision
+    std::string base_precision = precision_name;
+    size_t plus_pos = precision_name.find('+');
+    if (plus_pos != std::string::npos) {
+        base_precision = precision_name.substr(0, plus_pos);
+    }
+
+    if (base_precision == "double") { return 15; }
+    if (base_precision == "dd") { return 30; }
+    if (base_precision == "dq") { return 66; }
+    if (base_precision == "qx") { return 33; }
+    return 15;  // Default to double precision
 }
 
-} // namespace io
+}  // namespace io
 
-#endif // ENABLE_MAT_EXPORT
+#endif  // ENABLE_MAT_EXPORT

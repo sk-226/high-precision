@@ -56,8 +56,11 @@ CGResult<T> ssor_pcg_mixed_precision(
 
     // Build double precision SSOR preconditioner matrices
     // DL_d = D + ω*StrictlyLower(A) and DU_d = D + ω*StrictlyUpper(A)
-    // Extract diagonal (double precision)
-    DoubleVectorType diag_d = A.diagonal().template cast<double>();
+    // Extract diagonal (double precision) element-wise using to_double
+    DoubleVectorType diag_d(n);
+    for (int i = 0; i < n; ++i) {
+        diag_d[i] = to_double(A.coeff(i, i));
+    }
 
     // Build DL_d (lower triangular including diagonal, double precision)
     std::vector<DoubleTriplet> dl_triplets;
@@ -66,7 +69,7 @@ CGResult<T> ssor_pcg_mixed_precision(
         for (typename MatrixType::InnerIterator it(A, k); it; ++it) {
             int i = it.row();
             int j = it.col();
-            double val = static_cast<double>(it.value());
+            double val = to_double(it.value());
             if (i == j) {
                 // Diagonal: keep as is
                 dl_triplets.emplace_back(i, j, val);
@@ -87,7 +90,7 @@ CGResult<T> ssor_pcg_mixed_precision(
         for (typename MatrixType::InnerIterator it(A, k); it; ++it) {
             int i = it.row();
             int j = it.col();
-            double val = static_cast<double>(it.value());
+            double val = to_double(it.value());
             if (i == j) {
                 // Diagonal: keep as is
                 du_triplets.emplace_back(i, j, val);

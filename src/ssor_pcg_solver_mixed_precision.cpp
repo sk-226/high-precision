@@ -184,6 +184,12 @@ void printUsage(const char* program_name) {
                  "for nos5.mtx)\n";
     std::cout << "  --precision LEVEL     Precision level: dd, dq, qx, double "
                  "(default: qx)\n";
+    std::cout << "                        Note: Results are labeled as "
+                 "LEVEL+double (e.g., dq+double)\n";
+    std::cout << "                        to indicate mixed precision: main "
+                 "computation uses LEVEL,\n";
+    std::cout
+        << "                        preconditioner uses double precision.\n";
     std::cout
         << "  --tol VALUE           Convergence tolerance (default: 1.0e-12)\n";
     std::cout << "  --max-iter VALUE      Maximum iterations:\n";
@@ -214,6 +220,13 @@ void printUsage(const char* program_name) {
                  "--omega 1.2\n";
     std::cout << "  " << program_name
               << " --matrix nos5 --precision dq --export-csv summary.csv\n\n";
+}
+
+// Generate mixed precision label: e.g., "dq+double", "qx+double"
+// This indicates that the main computation uses precision T, while the
+// preconditioner is computed in double precision.
+std::string mixed_precision_label(const std::string& base_precision) {
+    return base_precision + "+double";
 }
 
 // Template solver function
@@ -254,11 +267,15 @@ int solveCG(const SolverConfig& config) {
     std::cout << "\nStarting SSOR-PCG iterations...\n";
     std::cout << "Omega (SSOR parameter): " << config.omega << '\n';
 
-    auto result = algorithms::ssor_pcg_mixed_precision<T>(A, b, x, x_true, max_iterations,
-                                          config.tolerance, config.omega);
+    auto result = algorithms::ssor_pcg_mixed_precision<T>(
+        A, b, x, x_true, max_iterations, config.tolerance, config.omega);
 
     // Print results
     algorithms::print_results(result, config.matrix_name + ".mtx");
+
+    // Generate mixed precision label for output (e.g., "dq+double")
+    std::string output_precision_label =
+        mixed_precision_label(config.precision_level);
 
     // Export to MATLAB .mat file if requested
     if (!config.export_mat_file.empty()) {
@@ -267,7 +284,7 @@ int solveCG(const SolverConfig& config) {
         std::cout << "\nExporting convergence data to " << export_path << "..."
                   << '\n';
         bool export_success = io::MatExporter::export_convergence_data(
-            result, export_path, config.matrix_name, config.precision_level);
+            result, export_path, config.matrix_name, output_precision_label);
         if (export_success) {
             std::cout << "Export successful." << '\n';
         } else {
@@ -287,7 +304,7 @@ int solveCG(const SolverConfig& config) {
         omega_str << "omega=" << config.omega;
         bool csv_ok = io::CsvExporter::append_row(
             csv_path, config.matrix_name, n, A.nonZeros(), "ssor_pcg",
-            config.tolerance, max_iterations, "ones", config.precision_level,
+            config.tolerance, max_iterations, "ones", output_precision_label,
             "ssor", omega_str.str(), "PCG (SSOR)", config.omega,
             result.converged, result.iterations_performed, result.true_relres_2,
             result.final_residual_norm,
