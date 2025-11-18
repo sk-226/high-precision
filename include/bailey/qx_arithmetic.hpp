@@ -209,6 +209,24 @@ struct NumTraits<bailey::QXNumber> : GenericNumTraits<bailey::QXNumber> {
         MulCost = 16   // Estimated cost for QX operations
     };
 };
+
+namespace internal {
+// Specialization for casting QXNumber to double (used in mixed precision)
+template <>
+struct cast_impl<bailey::QXNumber, double> {
+    static double run(const bailey::QXNumber& x) {
+        return bailey::to_double(x);
+    }
+};
+
+// Specialization for casting double to QXNumber (used in mixed precision)
+template <>
+struct cast_impl<double, bailey::QXNumber> {
+    static bailey::QXNumber run(const double& x) {
+        return bailey::QXNumber(x);
+    }
+};
+}  // namespace internal
 }  // namespace Eigen
 
 // --- Type Aliases ---

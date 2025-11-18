@@ -178,4 +178,22 @@ struct NumTraits<bailey::DDNumber> : GenericNumTraits<bailey::DDNumber> {
         MulCost = 32
     };
 };
+
+namespace internal {
+// Specialization for casting DDNumber to double (used in mixed precision)
+template <>
+struct cast_impl<bailey::DDNumber, double> {
+    static double run(const bailey::DDNumber& x) {
+        return bailey::to_double(x);
+    }
+};
+
+// Specialization for casting double to DDNumber (used in mixed precision)
+template <>
+struct cast_impl<double, bailey::DDNumber> {
+    static bailey::DDNumber run(const double& x) {
+        return bailey::DDNumber(x);
+    }
+};
+}  // namespace internal
 }  // namespace Eigen
