@@ -13,9 +13,11 @@ namespace algorithms {
 /// Solves the linear system Ax = b using the Preconditioned Conjugate Gradient
 /// method with SSOR (Symmetric Successive Over-Relaxation) preconditioning.
 /// Uses mixed precision: the preconditioner application z = M^{-1} r is
-/// computed in double precision, while the rest of the CG algorithm uses high
+/// computed in precision P, while the rest of the CG algorithm uses high
 /// precision T.
 ///
+/// @tparam T Main computation precision type
+/// @tparam P Preconditioner precision type
 /// @param A Symmetric positive definite matrix (high precision T)
 /// @param b Right-hand side vector (high precision T)
 /// @param x Initial guess (modified in-place, high precision T)
@@ -24,7 +26,7 @@ namespace algorithms {
 /// @param tolerance Convergence tolerance for relative residual
 /// @param omega SSOR relaxation parameter (typically 0 < omega < 2)
 /// @return CGResult containing convergence history and statistics
-template <typename T>
+template <typename T, typename P>
 CGResult<T> ssor_pcg_mixed_precision(
     const typename bailey::PrecisionTraits<T>::matrix_type& A,
     const typename bailey::PrecisionTraits<T>::vector_type& b,
@@ -35,10 +37,11 @@ CGResult<T> ssor_pcg_mixed_precision(
     using MatrixType = typename Traits::matrix_type;
     using VectorType = typename Traits::vector_type;
 
-    // Double precision types for preconditioner matrices
-    using DoubleMatrixType = Eigen::SparseMatrix<double>;
-    using DoubleVectorType = Eigen::VectorXd;
-    using DoubleTriplet = Eigen::Triplet<double>;
+    // Preconditioner precision types
+    using PrecTraits = bailey::PrecisionTraits<P>;
+    using PrecMatrixType = typename PrecTraits::matrix_type;
+    using PrecVectorType = typename PrecTraits::vector_type;
+    using PrecTriplet = Eigen::Triplet<P>;
 
     auto start_time = std::chrono::high_resolution_clock::now();
 
@@ -54,55 +57,55 @@ CGResult<T> ssor_pcg_mixed_precision(
 
     int n = A.rows();
 
-    // Build double precision SSOR preconditioner matrices
-    // DL_d = D + ω*StrictlyLower(A) and DU_d = D + ω*StrictlyUpper(A)
-    // Extract diagonal (double precision) element-wise using to_double
-    DoubleVectorType diag_d(n);
+    // Build precision P SSOR preconditioner matrices
+    // DL = D + ω*StrictlyLower(A) and DU = D + ω*StrictlyUpper(A)
+    // Convert from precision T to precision P element-wise
+    PrecVectorType diag(n);
     for (int i = 0; i < n; ++i) {
-        diag_d[i] = to_double(A.coeff(i, i));
+        diag[i] = P(to_double(A.coeff(i, i)));
     }
 
-    // Build DL_d (lower triangular including diagonal, double precision)
-    std::vector<DoubleTriplet> dl_triplets;
+    // Build DL (lower triangular including diagonal, precision P)
+    std::vector<PrecTriplet> dl_triplets;
     dl_triplets.reserve((A.nonZeros() / 2) + n);  // Rough estimate
     for (int k = 0; k < A.outerSize(); ++k) {
         for (typename MatrixType::InnerIterator it(A, k); it; ++it) {
             int i = it.row();
             int j = it.col();
-            double val = to_double(it.value());
+            P val = P(to_double(it.value()));
             if (i == j) {
                 // Diagonal: keep as is
                 dl_triplets.emplace_back(i, j, val);
             } else if (i > j) {
                 // Strictly lower: multiply by omega
-                dl_triplets.emplace_back(i, j, omega * val);
+                dl_triplets.emplace_back(i, j, P(omega) * val);
             }
         }
     }
-    DoubleMatrixType DL_d(n, n);
-    DL_d.setFromTriplets(dl_triplets.begin(), dl_triplets.end());
-    DL_d.makeCompressed();
+    PrecMatrixType DL(n, n);
+    DL.setFromTriplets(dl_triplets.begin(), dl_triplets.end());
+    DL.makeCompressed();
 
-    // Build DU_d (upper triangular including diagonal, double precision)
-    std::vector<DoubleTriplet> du_triplets;
+    // Build DU (upper triangular including diagonal, precision P)
+    std::vector<PrecTriplet> du_triplets;
     du_triplets.reserve((A.nonZeros() / 2) + n);  // Rough estimate
     for (int k = 0; k < A.outerSize(); ++k) {
         for (typename MatrixType::InnerIterator it(A, k); it; ++it) {
             int i = it.row();
             int j = it.col();
-            double val = to_double(it.value());
+            P val = P(to_double(it.value()));
             if (i == j) {
                 // Diagonal: keep as is
                 du_triplets.emplace_back(i, j, val);
             } else if (i < j) {
                 // Strictly upper: multiply by omega
-                du_triplets.emplace_back(i, j, omega * val);
+                du_triplets.emplace_back(i, j, P(omega) * val);
             }
         }
     }
-    DoubleMatrixType DU_d(n, n);
-    DU_d.setFromTriplets(du_triplets.begin(), du_triplets.end());
-    DU_d.makeCompressed();
+    PrecMatrixType DU(n, n);
+    DU.setFromTriplets(du_triplets.begin(), du_triplets.end());
+    DU.makeCompressed();
 
     // Initialize residual: r = b - Ax
     VectorType r(b.size());
@@ -132,20 +135,37 @@ CGResult<T> ssor_pcg_mixed_precision(
     T rho_new{};  // (r_{k+1}, z_{k+1})
     T beta{};     // direction update factor
 
-    // Double precision temporaries for mixed precision preconditioner
-    DoubleVectorType r_d(n);
-    DoubleVectorType t_d(n);
-    DoubleVectorType u_d(n);
-    DoubleVectorType z_d(n);
+    // Precision P temporaries for mixed precision preconditioner
+    PrecVectorType r_p(n);
+    PrecVectorType t_p(n);
+    PrecVectorType u_p(n);
+    PrecVectorType z_p(n);
+
+    // Helper function to convert VectorType (T) to PrecVectorType (P)
+    auto convert_to_prec = [](const VectorType& v) -> PrecVectorType {
+        PrecVectorType result(v.size());
+        for (int i = 0; i < v.size(); ++i) {
+            result[i] = P(to_double(v[i]));
+        }
+        return result;
+    };
+
+    // Helper function to convert PrecVectorType (P) to VectorType (T)
+    auto convert_from_prec = [](const PrecVectorType& v) -> VectorType {
+        VectorType result(v.size());
+        for (int i = 0; i < v.size(); ++i) {
+            result[i] = T(to_double(v[i]));
+        }
+        return result;
+    };
 
     // Apply initial SSOR preconditioner: z = M^{-1} r (mixed precision)
-    // Cast r to double, compute preconditioner in double, cast z back to high
-    // precision
-    r_d = r.template cast<double>();
-    t_d = DL_d.triangularView<Eigen::Lower>().solve(r_d);
-    u_d = diag_d.cwiseProduct(t_d);
-    z_d = DU_d.triangularView<Eigen::Upper>().solve(u_d);
-    VectorType z = z_d.template cast<T>();
+    // Convert r from T to P, compute preconditioner in P, convert z back to T
+    r_p = convert_to_prec(r);
+    t_p = DL.template triangularView<Eigen::Lower>().solve(r_p);
+    u_p = diag.cwiseProduct(t_p);
+    z_p = DU.template triangularView<Eigen::Upper>().solve(u_p);
+    VectorType z = convert_from_prec(z_p);
 
     // Initialize search direction p = z
     VectorType p = z;
@@ -170,13 +190,12 @@ CGResult<T> ssor_pcg_mixed_precision(
         r.noalias() -= alpha * w;
 
         // Apply SSOR preconditioner: z = M^{-1} r (mixed precision)
-        // Cast r to double, compute preconditioner in double, cast z back to
-        // high precision
-        r_d = r.template cast<double>();
-        t_d = DL_d.triangularView<Eigen::Lower>().solve(r_d);
-        u_d = diag_d.cwiseProduct(t_d);
-        z_d = DU_d.triangularView<Eigen::Upper>().solve(u_d);
-        z = z_d.template cast<T>();
+        // Convert r from T to P, compute preconditioner in P, convert z back to T
+        r_p = convert_to_prec(r);
+        t_p = DL.template triangularView<Eigen::Lower>().solve(r_p);
+        u_p = diag.cwiseProduct(t_p);
+        z_p = DU.template triangularView<Eigen::Upper>().solve(u_p);
+        z = convert_from_prec(z_p);
 
         // Compute new inner product (r_{k+1}, z_{k+1})
         rho_new = r.dot(z);

@@ -25,7 +25,8 @@
 struct SolverConfig {
     double omega{1.0};
     std::string matrix_name;
-    std::string precision_level{"qx"};  // dd, dq, qx
+    std::string precision_level{"qx"};  // dd, dq, qx, double
+    std::string precond_precision_level{"double"};  // dd, dq, qx, double (default: double)
     double tolerance{1.0e-12};
     std::variant<int, double> max_iter{2.0};  // Default: 2*n
     std::string input_dir{"/work/inputs"};
@@ -99,6 +100,16 @@ SolverConfig parseCommandLine(int argc, char** argv) {
             if (lvl != "dd" && lvl != "dq" && lvl != "qx" && lvl != "double") {
                 throw std::runtime_error(
                     "Invalid precision level. Use: dd, dq, qx, or double");
+            }
+            continue;
+        }
+
+        if (arg == "--precond-precision" || arg == "--pc-precision") {
+            config.precond_precision_level = std::string(next_token(i));
+            std::string_view lvl{config.precond_precision_level};
+            if (lvl != "dd" && lvl != "dq" && lvl != "qx" && lvl != "double") {
+                throw std::runtime_error(
+                    "Invalid preconditioner precision level. Use: dd, dq, qx, or double");
             }
             continue;
         }
@@ -182,14 +193,12 @@ void printUsage(const char* program_name) {
     std::cout << "Options:\n";
     std::cout << "  --matrix NAME         Matrix name (required, e.g., nos5 "
                  "for nos5.mtx)\n";
-    std::cout << "  --precision LEVEL     Precision level: dd, dq, qx, double "
+    std::cout << "  --precision LEVEL     Main computation precision: dd, dq, qx, double "
                  "(default: qx)\n";
-    std::cout << "                        Note: Results are labeled as "
-                 "LEVEL+double (e.g., dq+double)\n";
-    std::cout << "                        to indicate mixed precision: main "
-                 "computation uses LEVEL,\n";
-    std::cout
-        << "                        preconditioner uses double precision.\n";
+    std::cout << "  --precond-precision LEVEL  Preconditioner precision: dd, dq, qx, double "
+                 "(default: double)\n";
+    std::cout << "                        Results are labeled as BASE+PRECOND (e.g., dq+dd)\n";
+    std::cout << "                        when different precisions are used.\n";
     std::cout
         << "  --tol VALUE           Convergence tolerance (default: 1.0e-12)\n";
     std::cout << "  --max-iter VALUE      Maximum iterations:\n";
@@ -216,17 +225,22 @@ void printUsage(const char* program_name) {
     std::cout << "  " << program_name
               << " --matrix nos5 --precision double --tol 1e-10 --omega 1.5\n";
     std::cout << "  " << program_name
-              << " --matrix nos5 --precision dq --export-mat results.mat "
-                 "--omega 1.2\n";
+              << " --matrix nos5 --precision dq --precond-precision dd --omega 1.2\n";
+    std::cout << "  " << program_name
+              << " --matrix nos5 --precision qx --precond-precision dq --export-mat results.mat\n";
     std::cout << "  " << program_name
               << " --matrix nos5 --precision dq --export-csv summary.csv\n\n";
 }
 
-// Generate mixed precision label: e.g., "dq+double", "qx+double"
-// This indicates that the main computation uses precision T, while the
-// preconditioner is computed in double precision.
-std::string mixed_precision_label(const std::string& base_precision) {
-    return base_precision + "+double";
+// Generate mixed precision label: e.g., "dq+double", "qx+dd", "dq+dd"
+// If base and precond are the same, return just base (e.g., "dq")
+// Otherwise return "base+precond" (e.g., "dq+dd")
+std::string mixed_precision_label(const std::string& base_precision,
+                                  const std::string& precond_precision) {
+    if (base_precision == precond_precision) {
+        return base_precision;
+    }
+    return base_precision + "+" + precond_precision;
 }
 
 // Template solver function
@@ -266,16 +280,33 @@ int solveCG(const SolverConfig& config) {
 
     std::cout << "\nStarting SSOR-PCG iterations...\n";
     std::cout << "Omega (SSOR parameter): " << config.omega << '\n';
+    std::cout << "Preconditioner precision: " << config.precond_precision_level << '\n';
 
-    auto result = algorithms::ssor_pcg_mixed_precision<T>(
-        A, b, x, x_true, max_iterations, config.tolerance, config.omega);
+    // Dispatch based on preconditioner precision
+    algorithms::CGResult<T> result;
+    if (config.precond_precision_level == "double") {
+        result = algorithms::ssor_pcg_mixed_precision<T, double>(
+            A, b, x, x_true, max_iterations, config.tolerance, config.omega);
+    } else if (config.precond_precision_level == "dd") {
+        result = algorithms::ssor_pcg_mixed_precision<T, bailey::DDNumber>(
+            A, b, x, x_true, max_iterations, config.tolerance, config.omega);
+    } else if (config.precond_precision_level == "dq") {
+        result = algorithms::ssor_pcg_mixed_precision<T, bailey::DQNumber>(
+            A, b, x, x_true, max_iterations, config.tolerance, config.omega);
+    } else if (config.precond_precision_level == "qx") {
+        result = algorithms::ssor_pcg_mixed_precision<T, bailey::QXNumber>(
+            A, b, x, x_true, max_iterations, config.tolerance, config.omega);
+    } else {
+        throw std::runtime_error("Invalid preconditioner precision level: " +
+                                 config.precond_precision_level);
+    }
 
     // Print results
     algorithms::print_results(result, config.matrix_name + ".mtx");
 
-    // Generate mixed precision label for output (e.g., "dq+double")
+    // Generate mixed precision label for output (e.g., "dq+double", "dq+dd")
     std::string output_precision_label =
-        mixed_precision_label(config.precision_level);
+        mixed_precision_label(config.precision_level, config.precond_precision_level);
 
     // Export to MATLAB .mat file if requested
     if (!config.export_mat_file.empty()) {
