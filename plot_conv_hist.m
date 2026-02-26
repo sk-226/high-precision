@@ -28,9 +28,12 @@ function plot_conv_hist(results, figure_title, opt)
     % CAUTION: x_axis starts from 0
     x_axis = 0:results.iter_final;
     hold on, grid on;
-    plot(x_axis, results.hist_relres_2, '-*', 'Color', oi.blue, 'MarkerSize',6,'DisplayName', strcat('||r_k||_2/||b||_2'));
-    plot(x_axis, results.hist_relerr_2, '-+', 'Color', oi.orange, 'MarkerSize',6,'DisplayName', strcat('||e_k||_2/||x_{true}||_2'));
-    plot(x_axis, results.hist_relerr_A, '-x', 'Color', oi.green, 'MarkerSize',6,'DisplayName', strcat('||e_k||_A/||x_{true}||_A'));
+    % plot(x_axis, results.hist_relres_2, '-*', 'Color', oi.blue, 'MarkerSize',6,'DisplayName', strcat('||r_k||_2/||b||_2'));
+    % plot(x_axis, results.hist_relerr_2, '-+', 'Color', oi.orange, 'MarkerSize',6,'DisplayName', strcat('||e_k||_2/||x_{true}||_2'));
+    % plot(x_axis, results.hist_relerr_A, '-x', 'Color', oi.green, 'MarkerSize',6,'DisplayName', strcat('||e_k||_A/||x_{true}||_A'));
+    plot(x_axis, results.hist_relres_2, '-*','MarkerSize',6,'DisplayName', strcat('||r_k||_2/||b||_2'));
+    plot(x_axis, results.hist_relerr_2, '-*','MarkerSize',6,'DisplayName', strcat('||e_k||_2/||x_{true}||_2'));
+    plot(x_axis, results.hist_relerr_A, '-*','MarkerSize',6,'DisplayName', strcat('||e_k||_A/||x_{true}||_A'));
     legend, box on;
     title(figure_title, 'Interpreter', 'none');
     xlabel('Number of Iterations');
@@ -67,7 +70,11 @@ function plot_conv_hist(results, figure_title, opt)
             end
             % Build complete file path including extension
             file_name = fullfile(target_dir, strcat(filename, ".", format_type));
-            saveas(fig, file_name);
+            if strcmp(format_type, "fig")
+                savefig(fig, file_name);
+            else
+                saveas(fig, file_name);
+            end
         end
     end
 

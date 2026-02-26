@@ -1,5 +1,5 @@
-inputs_dir = 'outputs_double_k_k-3';
-output_dir = 'outputs_double_proper_search_figs';
+inputs_dir = 'outputs_dd_k_k-2';
+output_dir = 'outputs_dd_proper_search_figs';
 
 inputs = dir(fullfile(inputs_dir,'**','*.mat'));
 inputs = inputs(~[inputs.isdir]); % inputs.name を使う

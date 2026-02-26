@@ -1,5 +1,5 @@
 inputs_dir = 'outputs';
-output_dir = 'outputs_ssor-pcg_figs';
+output_dir = 'outputs_figs';
 
 inputs = dir(fullfile(inputs_dir,'**','*.mat'));
 inputs = inputs(~[inputs.isdir]); % inputs.name を使う

@@ -20,7 +20,7 @@ matrices=(
 )
 
 precision="dd"
-lag=2 # proper search lag
+lag=3 # proper search lag
 
 # docker build -t bailey-hp .
 

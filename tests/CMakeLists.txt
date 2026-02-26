@@ -49,3 +49,17 @@ target_include_directories(eigen_precision_test PRIVATE ${COMMON_INCLUDE_DIRS})
 target_link_libraries(eigen_precision_test PRIVATE ${COMMON_LIBRARIES})
 target_compile_features(eigen_precision_test PRIVATE cxx_std_17)
 add_test(NAME eigen_precision_test COMMAND eigen_precision_test)
+
+# # DQ to QX direct cast test
+# add_executable(test_dq_to_qx_cast test_dq_to_qx_cast.cpp)
+# target_include_directories(test_dq_to_qx_cast PRIVATE ${COMMON_INCLUDE_DIRS})
+# target_link_libraries(test_dq_to_qx_cast PRIVATE ${COMMON_LIBRARIES})
+# target_compile_features(test_dq_to_qx_cast PRIVATE cxx_std_17)
+# add_test(NAME test_dq_to_qx_cast COMMAND test_dq_to_qx_cast)
+
+# # 1/3 precision comparison (double, DD, DQ)
+# add_executable(1div3 1div3.f90)
+# target_include_directories(1div3 PRIVATE ${COMMON_INCLUDE_DIRS})
+# target_compile_options(1div3 PRIVATE 
+#     $<$<COMPILE_LANGUAGE:Fortran>:-I$ENV{DDFUN_DIR} -I$ENV{DQFUN_DIR}>)
+# target_link_libraries(1div3 PRIVATE ${COMMON_LIBRARIES})

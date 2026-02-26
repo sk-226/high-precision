@@ -26,7 +26,8 @@ struct SolverConfig {
     double omega{1.0};
     std::string matrix_name;
     std::string precision_level{"qx"};  // dd, dq, qx, double
-    std::string precond_precision_level{"double"};  // dd, dq, qx, double (default: double)
+    std::string precond_precision_level{
+        "double"};  // dd, dq, qx, double (default: double)
     double tolerance{1.0e-12};
     std::variant<int, double> max_iter{2.0};  // Default: 2*n
     std::string input_dir{"/work/inputs"};
@@ -109,7 +110,8 @@ SolverConfig parseCommandLine(int argc, char** argv) {
             std::string_view lvl{config.precond_precision_level};
             if (lvl != "dd" && lvl != "dq" && lvl != "qx" && lvl != "double") {
                 throw std::runtime_error(
-                    "Invalid preconditioner precision level. Use: dd, dq, qx, or double");
+                    "Invalid preconditioner precision level. Use: dd, dq, qx, "
+                    "or double");
             }
             continue;
         }
@@ -193,12 +195,16 @@ void printUsage(const char* program_name) {
     std::cout << "Options:\n";
     std::cout << "  --matrix NAME         Matrix name (required, e.g., nos5 "
                  "for nos5.mtx)\n";
-    std::cout << "  --precision LEVEL     Main computation precision: dd, dq, qx, double "
+    std::cout << "  --precision LEVEL     Main computation precision: dd, dq, "
+                 "qx, double "
                  "(default: qx)\n";
-    std::cout << "  --precond-precision LEVEL  Preconditioner precision: dd, dq, qx, double "
+    std::cout << "  --precond-precision LEVEL  Preconditioner precision: dd, "
+                 "dq, qx, double "
                  "(default: double)\n";
-    std::cout << "                        Results are labeled as BASE+PRECOND (e.g., dq+dd)\n";
-    std::cout << "                        when different precisions are used.\n";
+    std::cout << "                        Results are labeled as BASE+PRECOND "
+                 "(e.g., dq+dd)\n";
+    std::cout
+        << "                        when different precisions are used.\n";
     std::cout
         << "  --tol VALUE           Convergence tolerance (default: 1.0e-12)\n";
     std::cout << "  --max-iter VALUE      Maximum iterations:\n";
@@ -224,10 +230,12 @@ void printUsage(const char* program_name) {
               << " --matrix test --precision dd --max-iter 2.5\n";
     std::cout << "  " << program_name
               << " --matrix nos5 --precision double --tol 1e-10 --omega 1.5\n";
+    std::cout
+        << "  " << program_name
+        << " --matrix nos5 --precision dq --precond-precision dd --omega 1.2\n";
     std::cout << "  " << program_name
-              << " --matrix nos5 --precision dq --precond-precision dd --omega 1.2\n";
-    std::cout << "  " << program_name
-              << " --matrix nos5 --precision qx --precond-precision dq --export-mat results.mat\n";
+              << " --matrix nos5 --precision qx --precond-precision dq "
+                 "--export-mat results.mat\n";
     std::cout << "  " << program_name
               << " --matrix nos5 --precision dq --export-csv summary.csv\n\n";
 }
@@ -280,7 +288,8 @@ int solveCG(const SolverConfig& config) {
 
     std::cout << "\nStarting SSOR-PCG iterations...\n";
     std::cout << "Omega (SSOR parameter): " << config.omega << '\n';
-    std::cout << "Preconditioner precision: " << config.precond_precision_level << '\n';
+    std::cout << "Preconditioner precision: " << config.precond_precision_level
+              << '\n';
 
     // Dispatch based on preconditioner precision
     algorithms::CGResult<T> result;
