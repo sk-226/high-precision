@@ -37,3 +37,26 @@
 - Docker image enforces quad `long double`; use Docker for CI/local parity.
 - Local builds require `QXFUN_DIR`, `DQFUN_DIR`, `DDFUN_DIR`; `matio-cpp` is auto‑detected (export control is optional).
 - Write artifacts to `outputs/`. When using `make run`, include `--` before solver args.
+
+## Cursor Cloud specific instructions
+
+### Architecture caveat (x86_64)
+The Cloud VM runs on x86_64 where `long double` is 80-bit extended (not IEEE binary128). **DD precision works; DQ/QX precision produces incorrect results on x86_64.** This is a known limitation documented in the README. The `check_ldbl` test verifies this: `is_ieee_quad_binary128: false`. Test failures in QX/DQ arithmetic on x86_64 are expected and not bugs.
+
+### Docker is required
+Everything builds and runs inside Docker. Before any build/test/run, ensure Docker is running (`sudo dockerd &>/tmp/dockerd.log &` if needed, then `sudo chmod 666 /var/run/docker.sock`). The fuse-overlayfs storage driver is used in the Cloud VM (overlay2 is not supported by the kernel).
+
+### Key commands (all from repo root)
+- **Build**: `make build` (builds Docker image with all dependencies)
+- **Run solver**: `make run NO_BUILD=1 -- cg_solver --matrix test1 --precision dd --tol 1e-20 --input-dir /work/inputs/test`
+- **Run tests**: `make run NO_BUILD=1 -- tests/test_basic`, `make run NO_BUILD=1 -- tests/check_ldbl`, etc.
+- Use `NO_BUILD=1` to skip rebuilding the Docker image when only running.
+- Matrix files must follow the structure `{input_dir}/{matrix_name}/{matrix_name}.mtx`.
+
+### Dockerfile workarounds for fuse-overlayfs
+The Dockerfile requires `dnf --setopt=cachedir=/tmp/dnf-cache` for secondary `dnf install` steps because fuse-overlayfs cannot handle EPEL metadata directory renames across layers. This is already applied in the current Dockerfile.
+
+### Build fixes for x86_64
+- `libquadmath` is added to link libraries on x86_64 (CMakeLists.txt conditional).
+- Fortran standalone programs (`dq_eps_and_sqrt2`, `pi_check`, `qx_io_demo`) are skipped on x86_64 due to REAL(16)/REAL(10) type mismatch.
+- `cg_alt_solver` target is commented out (source file not committed to repo).

@@ -70,6 +70,9 @@ set(COMMON_INCLUDE_DIRS
 )
 
 set(COMMON_LIBRARIES qxwrap qxfun dqwrap dqfun ddwrap ddfun gfortran)
+if(CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
+    list(APPEND COMMON_LIBRARIES quadmath)
+endif()
 if(BLAS_ENABLED)
     set(MATRIX_MARKET_LIBRARIES ${COMMON_LIBRARIES} fast_matrix_market ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES})
 else()
@@ -91,18 +94,18 @@ if(MAT_EXPORT_AVAILABLE)
     target_compile_definitions(cg_solver PRIVATE ENABLE_MAT_EXPORT)
 endif()
 
-# alternative CG Solver
-add_executable(cg_alt_solver src/cg_alt_solver.cpp)
-target_include_directories(cg_alt_solver PRIVATE ${COMMON_INCLUDE_DIRS})
-target_link_libraries(cg_alt_solver PRIVATE ${MATRIX_MARKET_LIBRARIES})
-target_compile_features(cg_alt_solver PRIVATE cxx_std_20)
-if(BLAS_ENABLED)
-    target_compile_definitions(cg_alt_solver PRIVATE EIGEN_USE_BLAS EIGEN_USE_LAPACKE)
-endif()
-if(MAT_EXPORT_AVAILABLE)
-    target_link_libraries(cg_alt_solver PRIVATE matioCpp::matioCpp)
-    target_compile_definitions(cg_alt_solver PRIVATE ENABLE_MAT_EXPORT)
-endif()
+# alternative CG Solver (source file not yet committed)
+# add_executable(cg_alt_solver src/cg_alt_solver.cpp)
+# target_include_directories(cg_alt_solver PRIVATE ${COMMON_INCLUDE_DIRS})
+# target_link_libraries(cg_alt_solver PRIVATE ${MATRIX_MARKET_LIBRARIES})
+# target_compile_features(cg_alt_solver PRIVATE cxx_std_20)
+# if(BLAS_ENABLED)
+#     target_compile_definitions(cg_alt_solver PRIVATE EIGEN_USE_BLAS EIGEN_USE_LAPACKE)
+# endif()
+# if(MAT_EXPORT_AVAILABLE)
+#     target_link_libraries(cg_alt_solver PRIVATE matioCpp::matioCpp)
+#     target_compile_definitions(cg_alt_solver PRIVATE ENABLE_MAT_EXPORT)
+# endif()
 
 # CR Solver (Conjugate Residual)
 add_executable(cr_solver src/cr_solver.cpp)
@@ -175,28 +178,32 @@ endif()
 add_subdirectory(tests)
 
 # ---------- Fortran 検証プログラム -------------------------------------------
-# DQ: eps と (sqrt(2))^2-2
-add_executable(dq_eps_and_sqrt2 src/dq_eps_and_sqrt2.f90)
-target_include_directories(dq_eps_and_sqrt2 PRIVATE ${COMMON_INCLUDE_DIRS})
-target_compile_options(dq_eps_and_sqrt2 PRIVATE 
-    $<$<COMPILE_LANGUAGE:Fortran>:-I$ENV{DQFUN_DIR}>)
-target_link_libraries(dq_eps_and_sqrt2 PRIVATE ${COMMON_LIBRARIES})
+# x86_64 では long double が 80-bit のため DQ/QX Fortran プログラムは
+# REAL(16) vs REAL(10) の不整合でビルドできない (arm64 専用)
+if(NOT CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
+  # DQ: eps と (sqrt(2))^2-2
+  add_executable(dq_eps_and_sqrt2 src/dq_eps_and_sqrt2.f90)
+  target_include_directories(dq_eps_and_sqrt2 PRIVATE ${COMMON_INCLUDE_DIRS})
+  target_compile_options(dq_eps_and_sqrt2 PRIVATE 
+      $<$<COMPILE_LANGUAGE:Fortran>:-I$ENV{DQFUN_DIR}>)
+  target_link_libraries(dq_eps_and_sqrt2 PRIVATE ${COMMON_LIBRARIES})
 
-# pi_check (DQ)
-add_executable(pi_check src/pi_check.f90)
-target_include_directories(pi_check PRIVATE ${COMMON_INCLUDE_DIRS})
-target_compile_options(pi_check PRIVATE 
-    $<$<COMPILE_LANGUAGE:Fortran>:-I$ENV{DQFUN_DIR}>)
-target_link_libraries(pi_check PRIVATE ${COMMON_LIBRARIES})
+  # pi_check (DQ)
+  add_executable(pi_check src/pi_check.f90)
+  target_include_directories(pi_check PRIVATE ${COMMON_INCLUDE_DIRS})
+  target_compile_options(pi_check PRIVATE 
+      $<$<COMPILE_LANGUAGE:Fortran>:-I$ENV{DQFUN_DIR}>)
+  target_link_libraries(pi_check PRIVATE ${COMMON_LIBRARIES})
+
+  # ---------- QXFUN I/O ヘルパーとデモ ------------------------------------------
+  # qxio: QXFUN の標準I/Oラッパ（ES80.33 固定）
+  add_executable(qx_io_demo src/qx_io_demo.f90 src/qxio.f90)
+  target_include_directories(qx_io_demo PRIVATE ${COMMON_INCLUDE_DIRS})
+  target_compile_options(qx_io_demo PRIVATE 
+      $<$<COMPILE_LANGUAGE:Fortran>:-I$ENV{QXFUN_DIR}>)
+  target_link_libraries(qx_io_demo PRIVATE ${COMMON_LIBRARIES})
+endif()
 
 # ---------- Fortranラッパーの構築 ---------------------------------------------
 # 注意: Fortranラッパーはinterfaces/bailey_wrappers/に移動済み
 # 実際のビルドでは環境変数で指定されたBaileyライブラリを使用
-
-# ---------- QXFUN I/O ヘルパーとデモ ------------------------------------------
-# qxio: QXFUN の標準I/Oラッパ（ES80.33 固定）
-add_executable(qx_io_demo src/qx_io_demo.f90 src/qxio.f90)
-target_include_directories(qx_io_demo PRIVATE ${COMMON_INCLUDE_DIRS})
-target_compile_options(qx_io_demo PRIVATE 
-    $<$<COMPILE_LANGUAGE:Fortran>:-I$ENV{QXFUN_DIR}>)
-target_link_libraries(qx_io_demo PRIVATE ${COMMON_LIBRARIES})

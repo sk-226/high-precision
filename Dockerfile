@@ -18,14 +18,14 @@ RUN dnf -y update --allowerasing && \
 # ---------------------------------------------------------------------------
 # BLAS/LAPACK ライブラリを別途インストール
 # ---------------------------------------------------------------------------
-RUN dnf -y install openblas-devel
+RUN dnf -y --setopt=cachedir=/tmp/dnf-cache install openblas-devel && rm -rf /tmp/dnf-cache
 
 # ---------------------------------------------------------------------------
 # matio と matio-cpp ライブラリをソースからビルド
 # ---------------------------------------------------------------------------
 RUN set -eux; cd /tmp; \
     # 必要な依存関係をインストール
-    dnf -y install hdf5-devel zlib-devel; \
+    dnf -y --setopt=cachedir=/tmp/dnf-cache install hdf5-devel zlib-devel; rm -rf /tmp/dnf-cache; \
     # matioをソースからビルド
     git clone --depth 1 https://github.com/tbeu/matio.git; \
     cd matio; \
